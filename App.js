@@ -4,7 +4,7 @@ import * as AuthSession from 'expo-auth-session';
 import { FontAwesome } from '@expo/vector-icons';
 import axios from 'axios';
 
-const CLIENT_ID = 'c60d2d470e1640cea6c414d0fc848d92';
+const CLIENT_ID = 'bc4798c9fb304cbc83425e514fa4e986';
 
 export default class App extends Component {
   state = {
