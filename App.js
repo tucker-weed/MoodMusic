@@ -5,11 +5,28 @@ import { FontAwesome } from '@expo/vector-icons';
 import axios from 'axios';
 
 const CLIENT_ID = 'bc4798c9fb304cbc83425e514fa4e986';
+const url = 'https://api.spotify.com/v1/search?type=track&limit=50&q=' + encodeURIComponent('track:\"'+"Soy Peor"+'\"');
 
 export default class App extends Component {
+
   state = {
     userInfo: null,
-    didError: false
+    didError: false,
+    token: null,
+  };
+
+  search = async () => {
+    const response = await axios.get(url, {
+        headers: {
+          "Authorization": `Bearer ${this.state.token}`
+        }
+    });
+    if (response == null) {
+      console.log("ERROR: token expired")
+      this.setState({ userInfo: null, didError: false, token: null });
+    } else {
+      console.log(response);
+    }
   };
 
   handleSpotifyLogin = async () => {
@@ -21,14 +38,15 @@ export default class App extends Component {
     });
     if (results.type !== 'success') {
       console.log(results.type);
-      this.setState({ didError: true });
+      this.setState({ didError: true, token: null });
     } else {
       const userInfo = await axios.get(`https://api.spotify.com/v1/me`, {
         headers: {
           "Authorization": `Bearer ${results.params.access_token}`
         }
       });
-      this.setState({ userInfo: userInfo.data });
+      console.log(userInfo);
+      this.setState({ userInfo: userInfo.data, token: results.params.access_token });
     }
   };
 
@@ -54,7 +72,7 @@ export default class App extends Component {
             Username:
           </Text>
           <Text style={styles.userInfoText}>
-            {this.state.userInfo.id}
+            {this.state.userInfo.display_name}
           </Text>
           <Text style={styles.userInfoText}>
             Email:
@@ -81,19 +99,28 @@ export default class App extends Component {
           color="#2FD566"
           size={128}
         />
+        {!this.state.userInfo ?
         <TouchableOpacity
           style={styles.button}
           onPress={this.handleSpotifyLogin}
-          disabled={this.state.userInfo ? true : false}
         >
           <Text style={styles.buttonText}>
             Login with Spotify
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> : null}
         {this.state.didError ?
           this.displayError() :
           this.displayResults()
         }
+        {this.state.userInfo ? 
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={this.search}
+        >
+          <Text style={styles.buttonText}>
+            Search
+          </Text>
+        </TouchableOpacity> : null}
       </View>
     );
   }
