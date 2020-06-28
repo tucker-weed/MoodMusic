@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
-import { TouchableOpacity, StyleSheet, Text, View, Image } from 'react-native';
+import { FlatList, TouchableOpacity, StyleSheet, Text, View, Image } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import { FontAwesome } from '@expo/vector-icons';
 import axios from 'axios';
 
 const CLIENT_ID = 'bc4798c9fb304cbc83425e514fa4e986';
-const url = 'https://api.spotify.com/v1/search?type=track&limit=50&q=' + encodeURIComponent('track:\"'+"Soy Peor"+'\"');
+//const url = 'https://api.spotify.com/v1/search?type=track&limit=50&q=' + encodeURIComponent('track:\"'+"Soy Peor"+'\"');
 
 export default class App extends Component {
 
@@ -13,19 +13,28 @@ export default class App extends Component {
     userInfo: null,
     didError: false,
     token: null,
+    playlists: null,
+  };
+
+  ListViewItemSeparator = () => {
+    return (
+      <View style={{ height: 0.2, width: '100%', backgroundColor: '#000' }}/>
+    );
   };
 
   search = async () => {
+    const url = 'https://api.spotify.com/v1/users/'+this.state.userInfo.id+'/playlists';
     const response = await axios.get(url, {
         headers: {
           "Authorization": `Bearer ${this.state.token}`
         }
     });
     if (response == null) {
-      console.log("ERROR: token expired")
+      console.log("ERROR: token expired");
       this.setState({ userInfo: null, didError: false, token: null });
     } else {
-      console.log(response);
+      console.log("Loaded playlists' data");
+      this.setState({ playlists: response.data.items });
     }
   };
 
@@ -45,7 +54,6 @@ export default class App extends Component {
           "Authorization": `Bearer ${results.params.access_token}`
         }
       });
-      console.log(userInfo);
       this.setState({ userInfo: userInfo.data, token: results.params.access_token });
     }
   };
@@ -110,7 +118,7 @@ export default class App extends Component {
         </TouchableOpacity> : null}
         {this.state.didError ?
           this.displayError() :
-          this.displayResults()
+          (this.state.playlists ? null : this.displayResults())
         }
         {this.state.userInfo ? 
         <TouchableOpacity 
@@ -121,6 +129,21 @@ export default class App extends Component {
             Search
           </Text>
         </TouchableOpacity> : null}
+        {this.state.playlists ? 
+        <FlatList
+          data={this.state.playlists}
+          ItemSeparatorComponent={this.ListViewItemSeparator}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <View key={item.id} style={{ backgroundColor: 'black', padding: 5 }}>
+              <Text style={{ color: 'white'}}>Playlist Id: {item.id}</Text>
+              <Image
+              style={styles.profileImage}
+              source={ {'uri': item.images[0].url} }
+              />
+            </View>
+          )}
+        /> : null}
       </View>
     );
   }
