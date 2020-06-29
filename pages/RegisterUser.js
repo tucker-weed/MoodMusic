@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, ScrollView, KeyboardAvoidingView, Alert } from 'react-native';
 import Mytextinput from '../components/Mytextinput.js';
-import Mybutton from '../components/Mybutton.js';
+import { ButtonOne } from '../components/MyButtons.js';
+import { StackActions } from '@react-navigation/native';
 import * as SQL from 'expo-sqlite';
 const db = SQL.openDatabase('UDB.db');
 
@@ -28,7 +29,7 @@ export default class RegisterUser extends React.Component {
                 {
                   text: 'Ok',
                   onPress: () =>
-                    that.props.navigation.navigate('HomeScreen'),
+                  that.props.navigation.dispatch(StackActions.replace('HomeScreen', { registered: true })),
                 },
               ],
               { cancelable: false }
@@ -61,9 +62,13 @@ export default class RegisterUser extends React.Component {
               maxLength={20}
               style={{ padding:10 }}
             />
-            <Mybutton
+            <ButtonOne
               title="Submit"
               customClick={this.submit.bind(this)}
+            />
+            <ButtonOne
+              title="Mood Music Home"
+              customClick={() => this.props.navigation.dispatch(StackActions.replace('HomeScreen', { registered: false }))}
             />
           </KeyboardAvoidingView>
         </ScrollView>

@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, YellowBox, ScrollView, KeyboardAvoidingView, Alert, } from 'react-native';
+import { View, ScrollView, KeyboardAvoidingView, Alert, } from 'react-native';
 import Mytextinput from '../components/Mytextinput.js';
-import Mybutton from '../components/Mybutton.js';
+import { ButtonOne } from '../components/MyButtons.js';
 import * as SQL from 'expo-sqlite';
 const db = SQL.openDatabase('UDB.db');
  
@@ -111,7 +111,7 @@ export default class UpdateUser extends React.Component {
               maxLength={10}
               style={{ padding:10 }}
             />
-            <Mybutton
+            <ButtonOne
               title="Update User"
               customClick={this.updateUser.bind(this)}
             />

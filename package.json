@@ -8,6 +8,7 @@
     "eject": "expo eject"
   },
   "dependencies": {
+    "@expo/vector-icons": "^10.2.0",
     "@react-native-community/async-storage": "^1.11.0",
     "@react-native-community/masked-view": "^0.1.10",
     "@react-navigation/native": "^5.6.1",
@@ -15,7 +16,7 @@
     "@unimodules/core": "~5.3.0",
     "axios": "^0.19.2",
     "expo": "^38.0.1",
-    "expo-auth-session": "~1.4.0",
+    "expo-auth-session": "^1.4.1",
     "expo-sqlite": "^8.2.1",
     "expo-status-bar": "^1.0.0",
     "react": "~16.11.0",

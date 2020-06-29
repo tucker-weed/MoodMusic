@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Alert } from 'react-native';
 import Mytextinput from '../components/Mytextinput.js';
-import Mybutton from '../components/Mybutton.js';
+import { ButtonOne, DangerButton } from '../components/MyButtons.js';
+import { StackActions } from '@react-navigation/native';
 import * as SQL from 'expo-sqlite';
 const db = SQL.openDatabase('UDB.db');
 
@@ -27,7 +28,13 @@ export default class UpdateUser extends React.Component {
               [
                 {
                   text: 'Ok',
-                  onPress: () => that.props.navigation.navigate('HomeScreen'),
+                  onPress: () => {
+                    that.props.navigation.dispatch(
+                      StackActions.replace('HomeScreen', {
+                        registered: false,
+                      })
+                    );
+                  },
                 },
               ],
               { cancelable: false }
@@ -53,9 +60,13 @@ export default class UpdateUser extends React.Component {
           onChangeText={input_user_name => this.setState({ input_user_name })}
           style={{ padding:10 }}
         />
-        <Mybutton
+        <DangerButton
           title="Delete User"
           customClick={this.deleteUser.bind(this)}
+        />
+        <ButtonOne
+          title="Mood Music Home"
+          customClick={() => this.props.navigation.dispatch(StackActions.replace('HomeScreen', { registered: true }))}
         />
       </View>
     );

@@ -5,11 +5,12 @@ const Mytext = props => {
 };
 const styles = StyleSheet.create({
   text: {
-    color: 'yellow',
+    color: 'white',
     fontSize: 18,
+    fontWeight: 'bold',
     alignItems: 'center',
     marginTop: 16,
-    marginLeft: 148,
+    marginLeft: 142,
     marginRight: 35,
   },
 });

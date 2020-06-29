@@ -1,14 +1,10 @@
-// imports from node_modules
 import React from "react";
-import { FlatList, TouchableOpacity, Text, View, Image } from "react-native";
+import { TouchableOpacity, Text, View, Image } from "react-native";
 import * as AuthSession from "expo-auth-session";
 import { FontAwesome } from "@expo/vector-icons";
 import axios from "axios";
 
-// imports from project environment
 import { styles } from "../Styles.js";
-
-// Necessary for spotify authentication
 const CLIENT_ID = "bc4798c9fb304cbc83425e514fa4e986";
 
 export default class SpotifyLogin extends React.Component {
@@ -27,7 +23,6 @@ export default class SpotifyLogin extends React.Component {
       userInfo: null,
       didError: false,
       token: null,
-      playlists: null
     };
   }
 
@@ -46,20 +41,10 @@ export default class SpotifyLogin extends React.Component {
     });
   };
 
-  search = async () => {
-    const url =
-      "https://api.spotify.com/v1/users/" +
-      this.state.userInfo.id +
-      "/playlists";
-    const response = await this.apiGet(url, this.state.token);
-    if (response) {
-      console.log("Loaded playlists' data");
-      this.setState({ playlists: response.data.items });
-    } else {
-      console.log("ERROR: token expired");
-      this.setState({ userInfo: null, didError: false, token: null });
-    }
-  };
+  nav = () => {
+    this.props.navigation.navigate('MoodHome');
+  }
+
 
   /**
    * Handles spotify authentication and updates state
@@ -80,7 +65,6 @@ export default class SpotifyLogin extends React.Component {
         `https://api.spotify.com/v1/me`,
         results.params.access_token
       );
-      this.props.navigation.navigate('MoodHome');
       this.setState({
         userInfo: userInfo.data,
         token: results.params.access_token
@@ -143,28 +127,9 @@ export default class SpotifyLogin extends React.Component {
           ? null
           : this.displayResults()}
         {this.state.userInfo ? (
-          <TouchableOpacity style={styles.button} onPress={this.search}>
-            <Text style={styles.buttonText}>Search</Text>
+          <TouchableOpacity style={styles.button} onPress={this.nav}>
+            <Text style={styles.buttonText}>Continue</Text>
           </TouchableOpacity>
-        ) : null}
-        {this.state.playlists ? (
-          <FlatList
-            data={this.state.playlists}
-            ItemSeparatorComponent={null}
-            keyExtractor={(_, index) => index.toString()}
-            renderItem={({ item }) => (
-              <View
-                key={item.id}
-                style={{ backgroundColor: "black", padding: 5 }}
-              >
-                <Text style={{ color: "white" }}>Playlist Id: {item.id}</Text>
-                <Image
-                  style={styles.profileImage}
-                  source={{ uri: item.images[0].url }}
-                />
-              </View>
-            )}
-          />
         ) : null}
       </View>
     );

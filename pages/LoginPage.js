@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Alert } from 'react-native';
 import Mytextinput from '../components/Mytextinput.js';
-import Mybutton from '../components/Mybutton.js';
+import { LoginButton } from '../components/MyButtons.js';
 import * as SQL from 'expo-sqlite';
 const db = SQL.openDatabase('UDB.db');
 
@@ -56,7 +56,7 @@ export default class LoginPage extends React.Component {
           onChangeText={input_user_password => this.setState({ input_user_password })}
           style={{ padding:10 }}
         />
-        <Mybutton
+        <LoginButton
           title="Login"
           customClick={this.searchUser.bind(this)}
         />

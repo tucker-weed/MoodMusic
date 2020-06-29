@@ -14,6 +14,7 @@ export const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#000",
+    fontWeight: 'bold',
     fontSize: 20
   },
   userInfo: {

@@ -5,7 +5,6 @@ import React from 'react';
 import HomeScreen  from './pages/HomeScreen.js';
 import RegisterUser from './pages/RegisterUser.js';
 import UpdateUser from './pages/UpdateUser.js';
-import ViewUser from './pages/ViewUser.js';
 import ViewAllUser from './pages/ViewAllUser.js';
 import DeleteUser from './pages/DeleteUser.js';
 import LoginPage from './pages/LoginPage.js';
@@ -22,16 +21,7 @@ function MainStackNavigator() {
           name='HomeScreen'
           component={HomeScreen}
           options={{ 
-            title: 'Home Screen',
-            headerStyle: { backgroundColor: 'white' },
-            headerTintColor: 'black',
-           }}
-        />
-        <Stack.Screen
-          name='View'
-          component={ViewUser}
-          options={{ 
-            title: 'View User',
+            title: 'Mood Music Home',
             headerStyle: { backgroundColor: 'white' },
             headerTintColor: 'black',
            }}
@@ -40,7 +30,7 @@ function MainStackNavigator() {
           name='ViewAll'
           component={ViewAllUser}
           options={{ 
-            title: 'View All Users',
+            title: 'User Information',
             headerStyle: { backgroundColor: 'white' },
             headerTintColor: 'black',
            }}
@@ -94,7 +84,7 @@ function MainStackNavigator() {
           name='MoodHome'
           component={MoodHome}
           options={{ 
-            title: '~ Mood Music ~',
+            title: 'Mood Music',
             headerStyle: { backgroundColor: 'white' },
             headerTintColor: 'black',
            }}
