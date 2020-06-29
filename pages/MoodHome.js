@@ -6,7 +6,7 @@ import axios from "axios";
 import { styles } from "../Styles.js";
 import { getData } from '../localStorage.js';
 
-export default class OnlineRules extends React.Component {
+export default class MoodHome extends React.Component {
 
   constructor(props) {
     super(props);

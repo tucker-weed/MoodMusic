@@ -2,9 +2,12 @@ import React from 'react';
 import { View } from 'react-native';
 import { ButtonOne, LoginButton } from '../components/MyButtons.js';
 import { StackActions } from '@react-navigation/native';
+import { FontAwesome } from "@expo/vector-icons";
 import Mytext from '../components/Mytext.js';
 import * as SQL from 'expo-sqlite';
 const db = SQL.openDatabase('UDB.db');
+
+import { styles } from "../Styles.js";
 
 export default class HomeScreen extends React.Component {
 
@@ -67,6 +70,9 @@ export default class HomeScreen extends React.Component {
           title="Login"
           customClick={() => that.props.navigation.navigate('Login')}
         /> : null}
+        <View style={styles.container}>
+          <FontAwesome name="spotify" color="#2FD566" size={128} />
+        </View>
       </View>
     );
   }
