@@ -3,10 +3,10 @@ import AsyncStorage from "@react-native-community/async-storage";
 /**
  * Stores a json object as a string
  *
- * @params - key, the key to apply to the local storage
- * @params - value, a json object, to be parsed as a string and stored
+ * @param key - the key to apply to the local storage
+ * @param value - a json object, to be parsed as a string and stored
  */
-export const storeData = async (key, value) => {
+export const setData = async (key, value) => {
   try {
     const jsonValue = JSON.stringify(value);
     await AsyncStorage.setItem(key, jsonValue);
@@ -18,7 +18,7 @@ export const storeData = async (key, value) => {
 /**
  * Gets a string from the local storage, and parses it as a json object
  *
- * @params - key, the key to apply to the local storage
+ * @param key - the key to apply to the local storage
  * @returns - a json object representing the stored value
  */
 export const getData = async key => {
@@ -33,7 +33,7 @@ export const getData = async key => {
 /**
  * Gets a string from the local storage, and parses it as a json object
  *
- * @params - key, the key to apply to the local storage
+ * @param key - the key to apply to the local storage
  */
 export const removeValue = async key => {
   try {

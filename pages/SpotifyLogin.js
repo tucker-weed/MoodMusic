@@ -5,6 +5,7 @@ import { FontAwesome } from "@expo/vector-icons";
 import axios from "axios";
 
 import { styles } from "../Styles.js";
+import { setData } from '../localStorage.js';
 const CLIENT_ID = "bc4798c9fb304cbc83425e514fa4e986";
 
 export default class SpotifyLogin extends React.Component {
@@ -65,6 +66,8 @@ export default class SpotifyLogin extends React.Component {
         `https://api.spotify.com/v1/me`,
         results.params.access_token
       );
+      await setData('userData', userInfo.data);
+      await setData('accessToken', results.params.access_token);
       this.setState({
         userInfo: userInfo.data,
         token: results.params.access_token

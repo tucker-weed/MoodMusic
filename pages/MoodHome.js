@@ -4,6 +4,7 @@ import Mytextinput from '../components/Mytextinput.js';
 import axios from "axios";
 
 import { styles } from "../Styles.js";
+import { getData } from '../localStorage.js';
 
 export default class OnlineRules extends React.Component {
 
@@ -32,17 +33,23 @@ export default class OnlineRules extends React.Component {
   };
 
   search = async () => {
+    const data = this.state.userInfo ? this.state.userInfo : await getData('userData');
+    const access = this.state.access ? this.state.access : await getData('accessToken');
     const url =
       "https://api.spotify.com/v1/users/" +
-      this.state.userInfo.id +
+      data.id +
       "/playlists";
-    const response = await this.apiGet(url, this.state.token);
+    const response = await this.apiGet(url, access);
     if (response) {
       console.log("Loaded playlists' data");
-      this.setState({ playlists: response.data.items });
+      if (this.userInfo && this.token) {
+        this.setState({ playlists: response.data.items });
+      } else {
+        this.setState({ playlists: response.data.items, userInfo: data, token: access });
+      }
     } else {
       console.log("ERROR: token expired");
-      this.setState({ userInfo: null, didError: false, token: null });
+      this.setState({ userInfo: null, token: null, playlists: null });
     }
   };
 
@@ -55,11 +62,9 @@ export default class OnlineRules extends React.Component {
         flexDirection: 'column',
       }}
       >
-        {this.state.userInfo ? (
-          <TouchableOpacity style={styles.button} onPress={this.search}>
-            <Text style={styles.buttonText}>Search</Text>
-          </TouchableOpacity>
-        ) : null}
+        <TouchableOpacity style={styles.button} onPress={this.search}>
+          <Text style={styles.buttonText}>Search Your Playlists</Text>
+        </TouchableOpacity>
         {this.state.playlists ? (
           <FlatList
             data={this.state.playlists}

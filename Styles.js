@@ -15,6 +15,7 @@ export const styles = StyleSheet.create({
   buttonText: {
     color: "#000",
     fontWeight: 'bold',
+    textAlign: 'center',
     fontSize: 20
   },
   userInfo: {
