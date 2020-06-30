@@ -10,6 +10,7 @@ import DeleteUser from './pages/DeleteUser.js';
 import LoginPage from './pages/LoginPage.js';
 import SpotifyLogin from './pages/SpotifyLogin.js';
 import MoodHome from './pages/MoodHome.js';
+import PlaylistCreator from './pages/PlaylistCreator.js';
 
 const Stack = createStackNavigator();
 
@@ -84,7 +85,16 @@ function MainStackNavigator() {
           name='MoodHome'
           component={MoodHome}
           options={{ 
-            title: 'Mood Music',
+            title: 'User Playlists',
+            headerStyle: { backgroundColor: 'white' },
+            headerTintColor: 'black',
+           }}
+        />
+        <Stack.Screen
+          name='PlaylistCreator'
+          component={PlaylistCreator}
+          options={{ 
+            title: 'Playlist Mixer',
             headerStyle: { backgroundColor: 'white' },
             headerTintColor: 'black',
            }}

@@ -12,6 +12,10 @@ export const styles = StyleSheet.create({
     backgroundColor: "#2FD566",
     padding: 20
   },
+  loadButton: {
+    backgroundColor: "#2FD566",
+    padding: 4
+  },
   buttonText: {
     color: "#000",
     fontWeight: 'bold',
