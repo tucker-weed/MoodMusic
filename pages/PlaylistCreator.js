@@ -72,10 +72,7 @@ export default class PlaylistCreator extends React.Component {
                 key={item.id}
                 style={{ backgroundColor: "black", padding: 5 }}
               >
-                <Text style={{ color: "white" }}>Track Id: 
-                {
-                  (!item || !item.track || !item.track.album || !item.track.album.images) ? null : item.track.album.id
-                }</Text>
+                <Text style={{ color: "white" }}>Track Id: {item.track.album.id}</Text>
                 <Image
                   style={styles.profileImage}
                   source={
