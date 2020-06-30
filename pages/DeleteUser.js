@@ -66,7 +66,7 @@ export default class UpdateUser extends React.Component {
         />
         <ButtonOne
           title="Mood Music Home"
-          customClick={() => this.props.navigation.dispatch(StackActions.replace('HomeScreen', { registered: true }))}
+          customClick={() => this.props.navigation.dispatch(StackActions.replace('HomeScreenTwo', { registered: true }))}
         />
       </View>
     );

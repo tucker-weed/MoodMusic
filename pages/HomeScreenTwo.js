@@ -9,13 +9,10 @@ const db = SQL.openDatabase('UDB.db');
 
 import { styles } from "../Styles.js";
 
-export default class HomeScreen extends React.Component {
+export default class HomeScreenTwo extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = {
-      registered: false,
-    }
     db.transaction(function(txn) {
       txn.executeSql(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='table_u'",
@@ -33,15 +30,6 @@ export default class HomeScreen extends React.Component {
   }
 
   render() {
-    const that = this;
-    const { registered } = this.state;
-    db.transaction(function(tx) {
-      tx.executeSql('SELECT * FROM table_u', [], (tx, results) => {
-        if (results.rows.length >= 1 && !registered) {
-          that.setState({ registered: !registered });
-        }
-      });
-    });
     return (
       <View
         style={{
@@ -49,17 +37,23 @@ export default class HomeScreen extends React.Component {
           backgroundColor: 'black',
         }}
         >
-        <Mytext text="Register or Login" />
-        {registered ?
-        <LoginButton
-        title="Login"
-        customClick={() => that.props.navigation.dispatch(StackActions.replace('Login', {}))}
-        /> 
-        : 
+        <Mytext text="Welcome Back" />
         <ButtonOne
-          title="Register"
-          customClick={() => that.props.navigation.dispatch(StackActions.replace('Register', {}))}
-        />}
+          title="Update"
+          customClick={() => this.props.navigation.navigate('Update')}
+        />
+        <ButtonOne
+          title="Account"
+          customClick={() => this.props.navigation.navigate('ViewAll')}
+        />
+        <ButtonOne
+          title="Delete"
+          customClick={() => this.props.navigation.dispatch(StackActions.replace('Delete', {}))}
+        />
+        <LoginButton
+          title="Spotify Login"
+          customClick={() => this.props.navigation.navigate('SpotifyLogin')}
+        />
         <View style={styles.container}>
           <FontAwesome name="spotify" color="#2FD566" size={128} />
         </View>

@@ -76,8 +76,8 @@ export default class PlaylistCreator extends React.Component {
                 <Image
                   style={styles.profileImage}
                   source={
-                    !item.track.album.images[0] ? { uri: this.state.userInfo.images[0].url } 
-                      : { uri: item.track.album.images[0].url }
+                    item.track.album.images[0] ? { uri: item.track.album.images[0].url }
+                      : { uri: this.state.userInfo.images[0].url } 
                   }
                 />
               </View>

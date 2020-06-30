@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Alert } from 'react-native';
 import Mytextinput from '../components/Mytextinput.js';
 import { LoginButton } from '../components/MyButtons.js';
+import { StackActions } from '@react-navigation/native';
 import * as SQL from 'expo-sqlite';
 const db = SQL.openDatabase('UDB.db');
 
@@ -23,7 +24,7 @@ export default class LoginPage extends React.Component {
           let len = results.rows.length;
           if (len > 0) {
             if (this.state.input_user_password == results.rows.item(0).user_password) {
-                this.props.navigation.navigate('SpotifyLogin');
+              this.props.navigation.dispatch(StackActions.replace('HomeScreenTwo', {}));
             } else {
               Alert.alert('Incorrect password');
             }

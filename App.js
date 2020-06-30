@@ -11,16 +11,27 @@ import LoginPage from './pages/LoginPage.js';
 import SpotifyLogin from './pages/SpotifyLogin.js';
 import MoodHome from './pages/MoodHome.js';
 import PlaylistCreator from './pages/PlaylistCreator.js';
+import HomeScreenTwo from './pages/HomeScreenTwo.js';
 
 const Stack = createStackNavigator();
 
 function MainStackNavigator() {
+
   return (
     <NavigationContainer>
       <Stack.Navigator>
         <Stack.Screen
           name='HomeScreen'
           component={HomeScreen}
+          options={{ 
+            title: 'Mood Music Home',
+            headerStyle: { backgroundColor: 'white' },
+            headerTintColor: 'black',
+           }}
+        />
+        <Stack.Screen
+          name='HomeScreenTwo'
+          component={HomeScreenTwo}
           options={{ 
             title: 'Mood Music Home',
             headerStyle: { backgroundColor: 'white' },

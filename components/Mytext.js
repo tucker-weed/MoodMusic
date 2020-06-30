@@ -8,10 +8,10 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+    justifyContent: 'center',
     alignItems: 'center',
+    textAlign: 'center',
     marginTop: 16,
-    marginLeft: 142,
-    marginRight: 35,
   },
 });
 export default Mytext;
