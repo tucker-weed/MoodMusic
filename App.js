@@ -24,7 +24,7 @@ function MainStackNavigator() {
           name='HomeScreen'
           component={HomeScreen}
           options={{ 
-            title: 'Mood Music Home',
+            title: 'Mood Music',
             headerStyle: { backgroundColor: 'white' },
             headerTintColor: 'black',
            }}
@@ -33,7 +33,7 @@ function MainStackNavigator() {
           name='HomeScreenTwo'
           component={HomeScreenTwo}
           options={{ 
-            title: 'Mood Music Home',
+            title: 'Mood Music',
             headerStyle: { backgroundColor: 'white' },
             headerTintColor: 'black',
            }}
@@ -87,7 +87,7 @@ function MainStackNavigator() {
           name='SpotifyLogin'
           component={SpotifyLogin}
           options={{ 
-            title: 'Login Spotify',
+            title: 'Spotify Login',
             headerStyle: { backgroundColor: 'white' },
             headerTintColor: 'black',
            }}

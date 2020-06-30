@@ -49,7 +49,7 @@ export default class HomeScreen extends React.Component {
           backgroundColor: 'black',
         }}
         >
-        <Mytext text="Register or Login" />
+        <Mytext text={registered ? "Account Login" : "Account Registration"} />
         {registered ?
         <LoginButton
         title="Login"

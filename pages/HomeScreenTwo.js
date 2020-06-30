@@ -51,7 +51,7 @@ export default class HomeScreenTwo extends React.Component {
           customClick={() => this.props.navigation.dispatch(StackActions.replace('Delete', {}))}
         />
         <LoginButton
-          title="Spotify Login"
+          title="Spotify"
           customClick={() => this.props.navigation.navigate('SpotifyLogin')}
         />
         <View style={styles.container}>

@@ -121,7 +121,7 @@ export default class SpotifyLogin extends React.Component {
             style={styles.button}
             onPress={this.handleSpotifyLogin}
           >
-            <Text style={styles.buttonText}>Login with Spotify</Text>
+            <Text style={styles.buttonText}>Login to Spotify</Text>
           </TouchableOpacity>
         )}
         {this.state.didError
