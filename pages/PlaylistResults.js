@@ -1,20 +1,19 @@
 import React from 'react';
 import { FlatList, TouchableOpacity, Text, View, Image } from "react-native";
-import Mytextinput from '../components/Mytextinput.js';
 import axios from "axios";
 
 import { styles } from "../Styles.js";
-import { setData, getData } from '../LocalStorage.js';
-import { ButtonOne } from '../components/MyButtons.js';
+import { getData } from '../LocalStorage.js';
+import Mytext from '../components/Mytext.js';
 
-export default class MoodHome extends React.Component {
+export default class PlaylistResults extends React.Component {
 
   constructor(props) {
     super(props);
     this.state = {
       userInfo: null,
       token: null,
-      playlists: null,
+      playlist: null,
     };
   }
 
@@ -35,23 +34,9 @@ export default class MoodHome extends React.Component {
 
   activate = async () => {
     const data = this.state.userInfo ? this.state.userInfo : await getData('userData');
-    const access = this.state.access ? this.state.access : await getData('accessToken');
-    const url =
-      "https://api.spotify.com/v1/users/" +
-      data.id +
-      "/playlists";
-    const response = await this.apiGet(url, access);
-    if (response) {
-      console.log("Loaded playlists' data");
-      if (this.userInfo && this.token) {
-        this.setState({ playlists: response.data.items });
-      } else {
-        this.setState({ playlists: response.data.items, userInfo: data, token: access });
-      }
-    } else {
-      console.log("ERROR: token expired");
-      this.setState({ userInfo: null, token: null, playlists: null });
-    }
+    const token = this.state.token ? this.state.token : await getData('accessToken');
+    const playlist = this.state.playlist ? this.state.playlist : await getData('playlistData');
+    this.setState({ userInfo: data, token: token, playlist: playlist });
   };
 
   render() {
@@ -64,11 +49,13 @@ export default class MoodHome extends React.Component {
       }}
       >
         <TouchableOpacity style={styles.button} onPress={this.activate}>
-          <Text style={styles.buttonText}>Search Your Playlists</Text>
+          <Text style={styles.buttonText}>Load Result</Text>
         </TouchableOpacity>
-        {this.state.playlists ? (
+        <Mytext text={this.state.playlist ? 
+            "Playlist length: "+this.state.playlist.length : "Click to see playlist"} />
+        {this.state.playlist ? (
           <FlatList
-            data={this.state.playlists}
+            data={this.state.playlist}
             ItemSeparatorComponent={null}
             keyExtractor={(_, index) => index.toString()}
             renderItem={({ item }) => (
@@ -76,16 +63,18 @@ export default class MoodHome extends React.Component {
                 key={item.id}
                 style={{ backgroundColor: "black", padding: 5 }}
               >
-                <Text style={{ color: "white" }}>Playlist Id: {item.id}</Text>
+                <Text style={{ color: "white" }}>Track Id: {item.track.id}</Text>
                 <Image
                   style={styles.profileImage}
-                  source={{ uri: item.images[0].url }}
+                  source={
+                    item.track.album.images[0] ? { uri: item.track.album.images[0].url }
+                      : { uri: this.state.userInfo.images[0].url } 
+                  }
                 />
                 <TouchableOpacity style={styles.loadButton} onPress={async () => {
-                  await setData('playlistId', item.id);
-                  this.props.navigation.navigate('PlaylistCreator');
+                  console.log(await this.apiGet('https://api.spotify.com/v1/audio-features/'+item.track.id, this.state.token));
               }}>
-                  <Text style={styles.buttonText}>Load</Text>
+                  <Text style={styles.buttonText}>Info</Text>
                 </TouchableOpacity>
               </View>
             )}

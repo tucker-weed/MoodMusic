@@ -12,6 +12,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     textAlign: 'center',
     marginTop: 16,
+    marginBottom: 16,
   },
 });
 export default Mytext;

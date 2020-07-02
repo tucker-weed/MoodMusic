@@ -1,10 +1,11 @@
 import React from 'react';
-import { FlatList, TouchableOpacity, Text, View, Image } from "react-native";
-import Mytextinput from '../components/Mytextinput.js';
+import { StyleSheet, TouchableOpacity, Text, View, Alert } from "react-native";
+import Slider from '@react-native-community/slider';
+import Mytext from '../components/Mytext.js';
 import axios from "axios";
 
 import { styles } from "../Styles.js";
-import { getData } from '../localStorage.js';
+import { setData, getData } from '../LocalStorage.js';
 
 export default class PlaylistCreator extends React.Component {
 
@@ -14,6 +15,10 @@ export default class PlaylistCreator extends React.Component {
       userInfo: null,
       token: null,
       playlist: null,
+      acousticness: 0.0,
+      liveness: 0.0,
+      loudness: -100.0,
+      danceability: 0.0,
     };
   }
 
@@ -32,18 +37,34 @@ export default class PlaylistCreator extends React.Component {
     });
   };
 
-  search = async () => {
-    const data = this.state.userInfo ? this.state.userInfo : await getData('userData');
-    const access = this.state.access ? this.state.access : await getData('accessToken');
+  activate = async () => {
+    const token = this.state.token ? this.state.token : await getData('accessToken');
     const playlistId = this.state.access ? this.state.access : await getData('playlistId');
     const url = "https://api.spotify.com/v1/playlists/"+playlistId+"/tracks";
-    const response = await this.apiGet(url, access);
+    const response = await this.apiGet(url, token);
+    const filteredGet = [];
     if (response) {
-      if (this.userInfo && this.token) {
-        this.setState({ playlist: response.data.items})
-      } else {
-        this.setState({ playlist: response.data.items, userInfo: data, token: access });
-      }
+        let index = 0;
+        Alert.alert(
+            'Creating Playlist',
+            'Please wait...',
+            [],
+            { cancelable: false, }
+          );
+        while (index < response.data.items.length) {
+            const songUrl = "https://api.spotify.com/v1/audio-features/"+response.data.items[index].track.id;
+            let trackData = await this.apiGet(songUrl, token);
+            trackData = trackData.data;
+            if (trackData && trackData.acousticness > this.state.acousticness &&
+            trackData.loudness > this.state.loudness &&
+            trackData.liveness > this.state.liveness &&
+            trackData.danceability > this.state.danceability) {
+                    filteredGet.push(response.data.items[index]);
+            }
+            index++;
+        }
+        await setData('playlistData', filteredGet);
+        this.props.navigation.navigate('PlaylistResults');
     } else {
       console.log("ERROR: token expired");
       this.setState({ userInfo: null, token: null, playlist: null });
@@ -59,32 +80,67 @@ export default class PlaylistCreator extends React.Component {
         flexDirection: 'column',
       }}
       >
-        <TouchableOpacity style={styles.button} onPress={this.search}>
+        <TouchableOpacity style={styles.button} onPress={this.activate}>
           <Text style={styles.buttonText}>Create Playlist</Text>
         </TouchableOpacity>
-        {this.state.playlist ? (
-          <FlatList
-            data={this.state.playlist}
-            ItemSeparatorComponent={null}
-            keyExtractor={(_, index) => index.toString()}
-            renderItem={({ item }) => (
-              <View
-                key={item.id}
-                style={{ backgroundColor: "black", padding: 5 }}
-              >
-                <Text style={{ color: "white" }}>Track Id: {item.track.album.id}</Text>
-                <Image
-                  style={styles.profileImage}
-                  source={
-                    item.track.album.images[0] ? { uri: item.track.album.images[0].url }
-                      : { uri: this.state.userInfo.images[0].url } 
-                  }
-                />
-              </View>
-            )}
-          />
-        ) : null}
+        <View style={localStyles.container} >
+            <Mytext text={"Acousticness: "+this.state.acousticness}/>
+            <Slider
+            style={{width: 300, height: 40}}
+            minimumValue={0}
+            maximumValue={1}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="#000000"
+            onValueChange={val => this.setState({ acousticness: +(val.toFixed(2))})}
+            />
+        </View>
+        <View style={localStyles.container} >
+            <Mytext text={"Liveness: "+this.state.liveness}/>
+            <Slider
+            style={{width: 300, height: 40}}
+            minimumValue={0}
+            maximumValue={1}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="#000000"
+            onValueChange={val => this.setState({ liveness: +(val.toFixed(2))})}
+            />
+        </View>
+        <View style={localStyles.container} >
+            <Mytext text={"Loudness: "+this.state.loudness}/>
+            <Slider
+            style={{width: 300, height: 40}}
+            minimumValue={0}
+            maximumValue={1}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="#000000"
+            onValueChange={val => this.setState({ loudness: +(val.toFixed(2))})}
+            />
+        </View>
+        <View style={localStyles.container} >
+            <Mytext text={"Danceability: "+this.state.danceability}/>
+            <Slider
+            style={{width: 300, height: 40}}
+            minimumValue={0}
+            maximumValue={1}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="#000000"
+            onValueChange={val => this.setState({ danceability: +(val.toFixed(2))})}
+            />
+        </View>
       </View>
     );
   }
 }
+
+
+const localStyles = StyleSheet.create({
+    container: {
+        alignItems: 'center',
+        backgroundColor: '#2FD566',
+        color: '#ffffff',
+        padding: 10,
+        marginTop: 16,
+        marginLeft: 35,
+        marginRight: 35,
+    }
+});

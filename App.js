@@ -12,11 +12,11 @@ import SpotifyLogin from './pages/SpotifyLogin.js';
 import MoodHome from './pages/MoodHome.js';
 import PlaylistCreator from './pages/PlaylistCreator.js';
 import HomeScreenTwo from './pages/HomeScreenTwo.js';
+import PlaylistResults from './pages/PlaylistResults.js';
 
 const Stack = createStackNavigator();
 
 function MainStackNavigator() {
-
   return (
     <NavigationContainer>
       <Stack.Navigator>
@@ -106,6 +106,15 @@ function MainStackNavigator() {
           component={PlaylistCreator}
           options={{ 
             title: 'Playlist Mixer',
+            headerStyle: { backgroundColor: 'white' },
+            headerTintColor: 'black',
+           }}
+        />
+        <Stack.Screen
+          name='PlaylistResults'
+          component={PlaylistResults}
+          options={{ 
+            title: 'Generated Playlist',
             headerStyle: { backgroundColor: 'white' },
             headerTintColor: 'black',
            }}
