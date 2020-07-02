@@ -5,14 +5,13 @@ import { FontAwesome } from "@expo/vector-icons";
 import axios from "axios";
 
 import { styles } from "../Styles.js";
-import { setData } from '../LocalStorage.js';
+import { setData } from "../LocalStorage.js";
 const CLIENT_ID = "bc4798c9fb304cbc83425e514fa4e986";
 
 export default class SpotifyLogin extends React.Component {
-
   /**
    * Component state
-   * 
+   *
    * @param userInfo - the spotify account holder's info
    * @param didError - indicates whether or not authentication succeeded
    * @param token - the spotify api's required authentication token
@@ -23,13 +22,13 @@ export default class SpotifyLogin extends React.Component {
     this.state = {
       userInfo: null,
       didError: false,
-      token: null,
+      token: null
     };
   }
 
   /**
    * Requests information based on url and gives a response
-   * 
+   *
    * @param url - the url of the spotify api with a given endpoint
    * @param token - the authorization token to pass to the api
    * @returns - a json object being the api response, or null
@@ -43,9 +42,8 @@ export default class SpotifyLogin extends React.Component {
   };
 
   nav = () => {
-    this.props.navigation.navigate('MoodHome');
-  }
-
+    this.props.navigation.navigate("MoodHome");
+  };
 
   /**
    * Handles spotify authentication and updates state
@@ -66,8 +64,8 @@ export default class SpotifyLogin extends React.Component {
         `https://api.spotify.com/v1/me`,
         results.params.access_token
       );
-      await setData('userData', userInfo.data);
-      await setData('accessToken', results.params.access_token);
+      await setData("userData", userInfo.data);
+      await setData("accessToken", results.params.access_token);
       this.setState({
         userInfo: userInfo.data,
         token: results.params.access_token
