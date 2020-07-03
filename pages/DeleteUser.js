@@ -16,6 +16,7 @@ export default class UpdateUser extends React.Component {
   deleteUser = () => {
     let that = this;
     const { input_user_name } = this.state;
+    
     db.transaction(tx => {
       tx.executeSql(
         'DELETE FROM  table_u where user_name=?',

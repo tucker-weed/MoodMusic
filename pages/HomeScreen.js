@@ -34,6 +34,7 @@ export default class HomeScreen extends React.Component {
   render() {
     const that = this;
     const { registered } = this.state;
+
     db.transaction(function(tx) {
       tx.executeSql("SELECT * FROM table_u", [], (tx, results) => {
         if (results.rows.length >= 1 && !registered) {
@@ -49,6 +50,7 @@ export default class HomeScreen extends React.Component {
         }}
       >
         <Mytext text={registered ? "Account Login" : "Account Registration"} />
+
         {registered ? (
           <LoginButton
             title="Login"
@@ -66,6 +68,7 @@ export default class HomeScreen extends React.Component {
             }
           />
         )}
+
         <View style={styles.container}>
           <FontAwesome name="spotify" color="#2FD566" size={128} />
         </View>

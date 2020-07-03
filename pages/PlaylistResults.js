@@ -12,7 +12,8 @@ export default class PlaylistResults extends React.Component {
     this.state = {
       userInfo: null,
       token: null,
-      playlist: null
+      playlist: null,
+      playlistId: ""
     };
   }
 
@@ -31,6 +32,25 @@ export default class PlaylistResults extends React.Component {
     });
   };
 
+  apiPut = async (url, token, trackIds) => {
+    const jsonData = {
+      uris: trackIds
+    };
+    return await axios.put(
+      url,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json;charset=UTF-8",
+          "Access-Control-Allow-Origin": "*"
+        },
+        data: jsonData,
+        dataType: "json"
+      }
+    );
+  };
+
   activate = async () => {
     const data = this.state.userInfo
       ? this.state.userInfo
@@ -41,7 +61,24 @@ export default class PlaylistResults extends React.Component {
     const playlist = this.state.playlist
       ? this.state.playlist
       : await getData("playlistData");
+    const playlistId = this.state.playlistId
+      ? this.state.playlistId
+      : await getData("storagePlaylist");
+
+    if (playlistId) {
+      const url =
+        "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
+      const ids = [];
+      for (i = 0; i < playlist.length; i++) {
+        ids.push("spotify:track:" + playlist[i].track.id);
+      }
+      await this.apiPut(url, token, ids);
+    }
     this.setState({ userInfo: data, token: token, playlist: playlist });
+  };
+
+  nav = () => {
+    this.props.navigation.navigate("SongPlayer");
   };
 
   render() {
@@ -53,16 +90,24 @@ export default class PlaylistResults extends React.Component {
           flexDirection: "column"
         }}
       >
-        <TouchableOpacity style={styles.button} onPress={this.activate}>
-          <Text style={styles.buttonText}>Load Result</Text>
-        </TouchableOpacity>
+        {this.state.playlist ? (
+          <TouchableOpacity style={styles.button} onPress={this.nav}>
+            <Text style={styles.whiteText}>View Track Player</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.button} onPress={this.activate}>
+            <Text style={styles.buttonText}>Load Result</Text>
+          </TouchableOpacity>
+        )}
+
         <Mytext
           text={
             this.state.playlist
-              ? "Playlist length: " + this.state.playlist.length
+              ? this.state.playlist.length + " Songs"
               : "Click to see playlist"
           }
         />
+
         {this.state.playlist ? (
           <FlatList
             data={this.state.playlist}

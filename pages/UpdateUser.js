@@ -46,6 +46,7 @@ export default class UpdateUser extends React.Component {
     const { user_password } = this.state;
     const { input_user_password } = this.state;
     const { collected_user_password } = this.state;
+    
     if (user_name && input_user_password == collected_user_password){
       if (user_password) {
           db.transaction((tx)=> {

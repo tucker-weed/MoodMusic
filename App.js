@@ -13,6 +13,7 @@ import MoodHome from './pages/MoodHome.js';
 import PlaylistCreator from './pages/PlaylistCreator.js';
 import HomeScreenTwo from './pages/HomeScreenTwo.js';
 import PlaylistResults from './pages/PlaylistResults.js';
+import SongPlayer from './pages/SongPlayer.js';
 
 const Stack = createStackNavigator();
 
@@ -115,6 +116,15 @@ function MainStackNavigator() {
           component={PlaylistResults}
           options={{ 
             title: 'Generated Playlist',
+            headerStyle: { backgroundColor: 'white' },
+            headerTintColor: 'black',
+           }}
+        />
+        <Stack.Screen
+          name='SongPlayer'
+          component={SongPlayer}
+          options={{ 
+            title: 'Player',
             headerStyle: { backgroundColor: 'white' },
             headerTintColor: 'black',
            }}

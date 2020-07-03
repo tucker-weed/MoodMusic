@@ -17,6 +17,7 @@ export default class RegisterUser extends React.Component {
   submit = () => {
     let that = this;
     const { user_name, user_password } = this.state;
+    
     db.transaction(function(tx) {
       tx.executeSql(
         'INSERT INTO table_u (user_name, user_password) VALUES (?,?)',

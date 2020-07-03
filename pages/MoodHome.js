@@ -30,6 +30,26 @@ export default class MoodHome extends React.Component {
     });
   };
 
+  apiPost = async (url, token) => {
+    const jsonData = {
+      name: "MoodMusicPlaylist",
+      public: false
+    };
+    return await axios.post(
+      url,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json;charset=UTF-8",
+          "Access-Control-Allow-Origin": "*"
+        },
+        data: jsonData,
+        dataType: "json"
+      }
+    );
+  };
+
   activate = async () => {
     const data = this.state.userInfo
       ? this.state.userInfo
@@ -37,10 +57,20 @@ export default class MoodHome extends React.Component {
     const access = this.state.access
       ? this.state.access
       : await getData("accessToken");
+    const cacheId = this.state.cacheId
+      ? this.state.cacheId
+      : await getData("storagePlaylist");
+
+    if (!cacheId) {
+      const url = "https://api.spotify.com/v1/users/" + data.id + "/playlists";
+      const response = await this.apiPost(url, access);
+      await setData("storagePlaylist", response.data.id);
+    }
+
     const url = "https://api.spotify.com/v1/users/" + data.id + "/playlists";
     const response = await this.apiGet(url, access);
+
     if (response) {
-      console.log("Loaded playlists' data");
       if (this.userInfo && this.token) {
         this.setState({ playlists: response.data.items });
       } else {
@@ -68,6 +98,7 @@ export default class MoodHome extends React.Component {
         <TouchableOpacity style={styles.button} onPress={this.activate}>
           <Text style={styles.buttonText}>Search Your Playlists</Text>
         </TouchableOpacity>
+
         {this.state.playlists ? (
           <FlatList
             data={this.state.playlists}
@@ -81,7 +112,11 @@ export default class MoodHome extends React.Component {
                 <Text style={{ color: "white" }}>Playlist Id: {item.id}</Text>
                 <Image
                   style={styles.profileImage}
-                  source={{ uri: item.images[0].url }}
+                  source={{
+                    uri: item.images[0]
+                      ? item.images[0].url
+                      : this.state.userInfo.images[0].url
+                  }}
                 />
                 <TouchableOpacity
                   style={styles.loadButton}

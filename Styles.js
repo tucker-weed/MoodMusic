@@ -16,6 +16,12 @@ export const styles = StyleSheet.create({
     backgroundColor: "#2FD566",
     padding: 4
   },
+  whiteText: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: 20,
+  },
   buttonText: {
     color: "#000",
     fontWeight: 'bold',

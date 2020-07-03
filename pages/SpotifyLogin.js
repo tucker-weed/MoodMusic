@@ -49,11 +49,15 @@ export default class SpotifyLogin extends React.Component {
    * Handles spotify authentication and updates state
    */
   handleSpotifyLogin = async () => {
-    let redirectUrl = AuthSession.getRedirectUrl();
-    let results = await AuthSession.startAsync({
+    const scopes = [
+      'user-read-email','user-read-playback-state','user-modify-playback-state',
+      'playlist-modify-private','playlist-modify-public'
+    ];
+    const redirectUrl = AuthSession.getRedirectUrl();
+    const results = await AuthSession.startAsync({
       authUrl: `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(
         redirectUrl
-      )}&scope=user-read-email&response_type=token`
+      )}&scope=${encodeURIComponent(scopes)}&response_type=token`
     });
 
     if (results.type !== "success") {
@@ -64,6 +68,7 @@ export default class SpotifyLogin extends React.Component {
         `https://api.spotify.com/v1/me`,
         results.params.access_token
       );
+
       await setData("userData", userInfo.data);
       await setData("accessToken", results.params.access_token);
       this.setState({
@@ -114,6 +119,7 @@ export default class SpotifyLogin extends React.Component {
     return (
       <View style={styles.container}>
         <FontAwesome name="spotify" color="#2FD566" size={128} />
+
         {this.state.userInfo ? null : (
           <TouchableOpacity
             style={styles.button}
@@ -122,16 +128,19 @@ export default class SpotifyLogin extends React.Component {
             <Text style={styles.buttonText}>Login to Spotify</Text>
           </TouchableOpacity>
         )}
+
         {this.state.didError
           ? this.displayError()
           : this.state.playlists
           ? null
           : this.displayResults()}
+
         {this.state.userInfo ? (
           <TouchableOpacity style={styles.button} onPress={this.nav}>
             <Text style={styles.buttonText}>Continue</Text>
           </TouchableOpacity>
         ) : null}
+        
       </View>
     );
   }

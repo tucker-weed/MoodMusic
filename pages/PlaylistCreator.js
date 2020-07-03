@@ -47,9 +47,11 @@ export default class PlaylistCreator extends React.Component {
       "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
     const response = await this.apiGet(url, token);
     const filteredGet = [];
+
     if (response) {
       let index = 0;
       let idString = "";
+
       while (index < response.data.items.length) {
         if (response.data.items.length - index == 1) {
           idString += response.data.items[index].track.id;
@@ -58,9 +60,11 @@ export default class PlaylistCreator extends React.Component {
         }
         index++;
       }
+
       const songsUrl =
         "https://api.spotify.com/v1/audio-features/?ids=" + idString;
       const trackData = await this.apiGet(songsUrl, token);
+
       for (j = 0; j < trackData.data.audio_features.length; j++) {
         if (
           trackData.data.audio_features[j].acousticness >

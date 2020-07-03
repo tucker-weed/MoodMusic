@@ -16,6 +16,7 @@ export default class LoginPage extends React.Component {
   }
   searchUser = () => {
     const { input_user_name } = this.state;
+    
     db.transaction(tx => {
       tx.executeSql(
         'SELECT * FROM table_u where user_name = ?',
