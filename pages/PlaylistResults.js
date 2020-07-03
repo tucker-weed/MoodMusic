@@ -4,7 +4,7 @@ import axios from "axios";
 
 import { styles } from "../Styles.js";
 import { getData } from "../LocalStorage.js";
-import Mytext from "../components/Mytext.js";
+import { Mytext } from "../components/Mytext.js";
 
 export default class PlaylistResults extends React.Component {
   constructor(props) {

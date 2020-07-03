@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { ButtonOne, LoginButton } from "../components/MyButtons.js";
 import { StackActions } from "@react-navigation/native";
 import { FontAwesome } from "@expo/vector-icons";
-import Mytext from "../components/Mytext.js";
+import { Mytext } from "../components/Mytext.js";
 import * as SQL from "expo-sqlite";
 const db = SQL.openDatabase("UDB.db");
 

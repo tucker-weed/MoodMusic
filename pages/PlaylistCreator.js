@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, TouchableOpacity, Text, View, Switch } from "react-native";
 import Slider from "@react-native-community/slider";
-import Mytext from "../components/Mytext.js";
+import { Mytext, MytextTwo } from "../components/Mytext.js";
 import axios from "axios";
 
 import { styles } from "../Styles.js";
@@ -15,11 +15,9 @@ export default class PlaylistCreator extends React.Component {
       token: null,
       playlist: null,
       isEnabled: false,
-      acousticness: 0.0,
-      liveness: 0.0,
-      loudness: 0.0,
-      danceability: 0.0,
-      energy: 0.0,
+      tempo: 0.0,
+      euphoria: 0.0,
+      hype: 0.0,
       key: 0
     };
   }
@@ -70,14 +68,18 @@ export default class PlaylistCreator extends React.Component {
       let j = 0;
 
       while (j < trackData.data.audio_features.length) {
+        const euphoria =
+          trackData.data.audio_features[j].danceability * 100 +
+          trackData.data.audio_features[j].valence * 100;
+        const hype =
+          trackData.data.audio_features[j].tempo * 2 +
+          trackData.data.audio_features[j].energy * 150 +
+          trackData.data.audio_features[j].acousticness * 75 +
+          trackData.data.audio_features[j].danceability * 150;
         if (
-          trackData.data.audio_features[j].acousticness >
-            this.state.acousticness &&
-          trackData.data.audio_features[j].loudness > this.state.loudness &&
-          trackData.data.audio_features[j].liveness > this.state.liveness &&
-          trackData.data.audio_features[j].danceability >
-            this.state.danceability &&
-          trackData.data.audio_features[j].energy > this.state.energy &&
+          trackData.data.audio_features[j].tempo > this.state.tempo &&
+          euphoria > this.state.euphoria &&
+          hype > this.state.hype &&
           (!this.state.isEnabled ||
             trackData.data.audio_features[j].key == this.state.key)
         ) {
@@ -110,69 +112,43 @@ export default class PlaylistCreator extends React.Component {
           <Text style={styles.buttonText}>Create Playlist</Text>
         </TouchableOpacity>
         <View style={localStyles.container}>
-          <Mytext text={"Acousticness: " + this.state.acousticness} />
+          <MytextTwo text={"Euphoria: " + this.state.euphoria} />
           <Slider
             style={{ width: 300, height: 40 }}
             minimumValue={0}
-            maximumValue={1}
+            maximumValue={200}
             minimumTrackTintColor="#FFFFFF"
             maximumTrackTintColor="#000000"
-            onValueChange={val =>
-              this.setState({ acousticness: +val.toFixed(2) })
-            }
+            onValueChange={val => this.setState({ euphoria: +val.toFixed(2) })}
           />
         </View>
         <View style={localStyles.container}>
-          <Mytext text={"Liveness: " + this.state.liveness} />
+          <MytextTwo text={"Hype: " + this.state.hype} />
           <Slider
             style={{ width: 300, height: 40 }}
             minimumValue={0}
-            maximumValue={1}
+            maximumValue={700}
             minimumTrackTintColor="#FFFFFF"
             maximumTrackTintColor="#000000"
-            onValueChange={val => this.setState({ liveness: +val.toFixed(2) })}
+            onValueChange={val => this.setState({ hype: +val.toFixed(2) })}
           />
         </View>
         <View style={localStyles.container}>
-          <Mytext text={"Loudness: " + this.state.loudness} />
-          <Slider
-            style={{ width: 300, height: 40 }}
-            minimumValue={-60}
-            maximumValue={0}
-            minimumTrackTintColor="#FFFFFF"
-            maximumTrackTintColor="#000000"
-            onValueChange={val => this.setState({ loudness: +val.toFixed(2) })}
-          />
-        </View>
-        <View style={localStyles.container}>
-          <Mytext text={"Danceability: " + this.state.danceability} />
+          <Mytext text={"Tempo: " + this.state.tempo} />
           <Slider
             style={{ width: 300, height: 40 }}
             minimumValue={0}
-            maximumValue={1}
+            maximumValue={200}
             minimumTrackTintColor="#FFFFFF"
             maximumTrackTintColor="#000000"
-            onValueChange={val =>
-              this.setState({ danceability: +val.toFixed(2) })
-            }
+            onValueChange={val => this.setState({ tempo: +val.toFixed(2) })}
           />
         </View>
         <View style={localStyles.container}>
-          <Mytext text={"Energy " + this.state.energy} />
-          <Slider
-            style={{ width: 300, height: 40 }}
-            minimumValue={0}
-            maximumValue={1}
-            minimumTrackTintColor="#FFFFFF"
-            maximumTrackTintColor="#000000"
-            onValueChange={val => this.setState({ energy: +val.toFixed(2) })}
-          />
-        </View>
-        <View style={localStyles.container}>
-          <Mytext text={"Key " + this.state.key} />
+          <Mytext text={"Key: " + this.state.key} />
           <Switch
             trackColor={{ false: "#767577", true: "#81b0ff" }}
-            thumbColor={this.state.isEnabled ? "#f5dd4b" : "#f4f3f4"}
+            thumbColor="#f4f3f4"
             ios_backgroundColor="#3e3e3e"
             onValueChange={this.toggleSwitch}
             value={this.state.isEnabled}

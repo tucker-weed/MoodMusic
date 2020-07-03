@@ -3,7 +3,7 @@ import { View } from "react-native";
 import axios from "axios";
 import { getData } from "../LocalStorage.js";
 import { LoginButton } from "../components/MyButtons.js";
-import Mytext from "../components/Mytext.js";
+import { Mytext } from "../components/Mytext.js";
 
 export default class SongPlayer extends React.Component {
   constructor(props) {
@@ -50,7 +50,6 @@ export default class SongPlayer extends React.Component {
 
   activatePlay = async () => {
     const token = await getData("accessToken");
-    console.log(token);
     try {
         await this.apiPut('https://api.spotify.com/v1/me/player/play', token)
     } catch (e) {
