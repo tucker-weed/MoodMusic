@@ -11,69 +11,59 @@ export default class SongPlayer extends React.Component {
   }
 
   apiPost = async (url, token) => {
-    await axios.post(
-      url,
-      {},
-      {
+    await axios.post(url, {}, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json;charset=UTF-8",
-          "Access-Control-Allow-Origin": "*"
+          'Content-Type': 'application/json;charset=UTF-8',
+          "Access-Control-Allow-Origin": "*",
         }
-      }
-    );
+      });
   };
 
   apiPut = async (url, token) => {
-    return await axios.put(
-      url,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json;charset=UTF-8",
-          "Access-Control-Allow-Origin": "*"
-        }
-      }
-    );
+    return await axios.put(url, {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json;charset=UTF-8',
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
   };
 
   activateNext = async () => {
     const token = await getData("accessToken");
     try {
-      await this.apiPost("https://api.spotify.com/v1/me/player/next", token);
+        await this.apiPost('https://api.spotify.com/v1/me/player/next', token)
     } catch (e) {
-      console.log(e);
+        console.log(e);
     }
   };
 
   activateBack = async () => {
     const token = await getData("accessToken");
     try {
-      await this.apiPost(
-        "https://api.spotify.com/v1/me/player/previous",
-        token
-      );
+        await this.apiPost('https://api.spotify.com/v1/me/player/previous', token)
     } catch (e) {
-      console.log(e);
+        console.log(e);
     }
   };
 
   activatePlay = async () => {
     const token = await getData("accessToken");
+    console.log(token);
     try {
-      await this.apiPut("https://api.spotify.com/v1/me/player/play", token);
+        await this.apiPut('https://api.spotify.com/v1/me/player/play', token)
     } catch (e) {
-      console.log(e);
+        console.log(e);
     }
   };
 
   activatePause = async () => {
     const token = await getData("accessToken");
     try {
-      await this.apiPut("https://api.spotify.com/v1/me/player/pause", token);
+        await this.apiPut('https://api.spotify.com/v1/me/player/pause', token)
     } catch (e) {
-      console.log(e);
+        console.log(e);
     }
   };
 
@@ -87,10 +77,22 @@ export default class SongPlayer extends React.Component {
         }}
       >
         <Mytext text={"Song Navigation"} />
-        <LoginButton title="Previous" customClick={this.activateBack} />
-        <LoginButton title="Pause" customClick={this.activatePause} />
-        <LoginButton title="Play" customClick={this.activatePlay} />
-        <LoginButton title="Next" customClick={this.activateNext} />
+        <LoginButton
+          title="Previous"
+          customClick={this.activateBack}
+        />
+        <LoginButton
+          title="Pause"
+          customClick={this.activatePause}
+        />
+        <LoginButton
+          title="Play"
+          customClick={this.activatePlay}
+        />
+        <LoginButton
+          title="Next"
+          customClick={this.activateNext}
+        />
       </View>
     );
   }

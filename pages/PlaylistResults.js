@@ -129,20 +129,6 @@ export default class PlaylistResults extends React.Component {
                       : { uri: this.state.userInfo.images[0].url }
                   }
                 />
-                <TouchableOpacity
-                  style={styles.loadButton}
-                  onPress={async () => {
-                    console.log(
-                      await this.apiGet(
-                        "https://api.spotify.com/v1/audio-features/" +
-                          item.track.id,
-                        this.state.token
-                      )
-                    );
-                  }}
-                >
-                  <Text style={styles.buttonText}>Info</Text>
-                </TouchableOpacity>
               </View>
             )}
           />
