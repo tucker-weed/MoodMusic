@@ -25,6 +25,14 @@ export const DangerButton = props => {
   );
 }
 
+export const PlayerButton = props => {
+  return (
+    <TouchableOpacity style={buttonStyles4.button} onPress={props.customClick}>
+      <Text style={buttonStyles4.text}>{props.title}</Text>
+    </TouchableOpacity>
+  );
+}
+
 const buttonStyles1 = StyleSheet.create({
   button: {
     alignItems: 'center',
@@ -71,6 +79,23 @@ const buttonStyles3 = StyleSheet.create({
   },
   text: {
     color: 'red',
+    fontWeight: 'bold',
+    fontSize: 20,
+  },
+});
+
+const buttonStyles4 = StyleSheet.create({
+  button: {
+    alignItems: 'center',
+    backgroundColor: '#2FD566',
+    color: 'white',
+    padding: 10,
+    marginTop: 16,
+    marginLeft: 47,
+    marginRight: 48,
+  },
+  text: {
+    color: 'white',
     fontWeight: 'bold',
     fontSize: 20,
   },
