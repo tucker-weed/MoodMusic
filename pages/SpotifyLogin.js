@@ -50,8 +50,8 @@ export default class SpotifyLogin extends React.Component {
    */
   handleSpotifyLogin = async () => {
     const scopes = [
-      'user-read-email','user-read-playback-state','user-modify-playback-state',
-      'playlist-modify-private','playlist-modify-public'
+      'user-read-email','user-library-modify','user-read-currently-playing','user-read-playback-state','user-modify-playback-state',
+      'playlist-modify-private','playlist-modify-public','user-library-read'
     ];
     const redirectUrl = AuthSession.getRedirectUrl();
     const results = await AuthSession.startAsync({
