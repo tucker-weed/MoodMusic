@@ -56,7 +56,7 @@ export default class SongPlayer extends React.Component {
 
   apiPutNav = async (url, token, id) => {
     const jsonData = {
-      context_uri: "spotify:user:12168726728:spotify:playlist:"+id,
+      context_uri: "spotify:user:12168726728:playlist:"+id,
       offset: {
         position: 0
       }  
