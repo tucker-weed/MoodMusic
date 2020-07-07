@@ -54,7 +54,7 @@ export default class PlaylistResults extends React.Component {
     const data = await getData("userData");
     const token = await getData("accessToken");
     const playlist = await getData("playlistData");
-    const playlistId = await getData("ourPlaylist");
+    const playlistId = await getData("mmPlaylist");
 
     if (playlistId) {
       const url =

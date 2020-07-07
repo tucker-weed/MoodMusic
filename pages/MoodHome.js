@@ -33,7 +33,7 @@ export default class MoodHome extends React.Component {
   apiPost = async (url, token) => {
     const jsonData = {
       name: "MoodMusicPlaylist",
-      public: false
+      public: true,
     };
     return await axios.post(
       url,
@@ -59,12 +59,12 @@ export default class MoodHome extends React.Component {
       : await getData("accessToken");
     const cacheId = this.state.cacheId
       ? this.state.cacheId
-      : await getData("ourPlaylist");
+      : await getData("mmPlaylist");
 
     if (!cacheId) {
       const url = "https://api.spotify.com/v1/users/" + data.id + "/playlists";
       const response = await this.apiPost(url, access);
-      await setData("ourPlaylist", response.data.id);
+      await setData("mmPlaylist", response.data.id);
     }
 
     const url = "https://api.spotify.com/v1/users/" + data.id + "/playlists";

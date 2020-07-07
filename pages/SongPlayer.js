@@ -8,19 +8,40 @@ import { Mytext } from "../components/Mytext.js";
 export default class SongPlayer extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      navigated: false,
+    }
   }
-
+  
   apiPost = async (url, token) => {
     await axios.post(url, {}, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json;charset=UTF-8',
           "Access-Control-Allow-Origin": "*",
-        }
+        },
       });
   };
 
-  apiPut = async (url, token) => {
+  apiPutNav = async (url, token, id) => {
+    const jsonData = {
+      context_uri: "spotify:playlist:"+id,
+      offset: {
+        position: 0
+      }  
+    }
+    return await axios.put(url, {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json;charset=UTF-8',
+        "Access-Control-Allow-Origin": "*",
+      },
+      data: jsonData,
+      dataType: "json",
+    });
+  };
+
+  apiPutRegular = async (url, token) => {
     return await axios.put(url, {}, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -33,7 +54,7 @@ export default class SongPlayer extends React.Component {
   activateNext = async () => {
     const token = await getData("accessToken");
     try {
-        await this.apiPost('https://api.spotify.com/v1/me/player/next', token)
+        await this.apiPost('https://api.spotify.com/v1/me/player/next', token);
     } catch (e) {
         console.log(e);
     }
@@ -42,7 +63,7 @@ export default class SongPlayer extends React.Component {
   activateBack = async () => {
     const token = await getData("accessToken");
     try {
-        await this.apiPost('https://api.spotify.com/v1/me/player/previous', token)
+        await this.apiPost('https://api.spotify.com/v1/me/player/previous', token);
     } catch (e) {
         console.log(e);
     }
@@ -50,8 +71,14 @@ export default class SongPlayer extends React.Component {
 
   activatePlay = async () => {
     const token = await getData("accessToken");
+    const id = await getData('mmPlaylist');
     try {
-        await this.apiPut('https://api.spotify.com/v1/me/player/play', token)
+        if (this.state.navigated) {
+          await this.apiPutRegular('https://api.spotify.com/v1/me/player/play', token);
+        } else {
+          await this.apiPutNav('https://api.spotify.com/v1/me/player/play', token, id);
+          this.setState({ navigated: true })
+        }
     } catch (e) {
         console.log(e);
     }
@@ -59,8 +86,14 @@ export default class SongPlayer extends React.Component {
 
   activatePause = async () => {
     const token = await getData("accessToken");
+    const id = await getData('mmPlaylist');
     try {
-        await this.apiPut('https://api.spotify.com/v1/me/player/pause', token)
+      if (this.state.navigated) {
+        await this.apiPutRegular('https://api.spotify.com/v1/me/player/pause', token);
+      } else {
+        await this.apiPutNav('https://api.spotify.com/v1/me/player/pause', token, id);
+        this.setState({ navigated: true })
+      }
     } catch (e) {
         console.log(e);
     }
