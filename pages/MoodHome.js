@@ -59,12 +59,12 @@ export default class MoodHome extends React.Component {
       : await getData("accessToken");
     const cacheId = this.state.cacheId
       ? this.state.cacheId
-      : await getData("storagePlaylist");
+      : await getData("ourPlaylist");
 
     if (!cacheId) {
       const url = "https://api.spotify.com/v1/users/" + data.id + "/playlists";
       const response = await this.apiPost(url, access);
-      await setData("storagePlaylist", response.data.id);
+      await setData("ourPlaylist", response.data.id);
     }
 
     const url = "https://api.spotify.com/v1/users/" + data.id + "/playlists";
@@ -107,9 +107,32 @@ export default class MoodHome extends React.Component {
             renderItem={({ item }) => (
               <View
                 key={item.id}
-                style={{ backgroundColor: "black", padding: 5 }}
+                style={{
+                  flex: 1,
+                  backgroundColor: "black",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  padding: 5
+                }}
               >
-                <Text style={{ color: "white" }}>Playlist Id: {item.id}</Text>
+                <Text
+                  style={{
+                    color: "white",
+                    fontWeight: "bold",
+                    marginBottom: 10
+                  }}
+                >
+                  {item.name}
+                </Text>
+                <Text
+                  style={{
+                    color: "white",
+                    fontWeight: "bold",
+                    marginBottom: 10
+                  }}
+                >
+                  {item.tracks.total} songs
+                </Text>
                 <Image
                   style={styles.profileImage}
                   source={{
@@ -119,7 +142,7 @@ export default class MoodHome extends React.Component {
                   }}
                 />
                 <TouchableOpacity
-                  style={styles.loadButton}
+                  style={styles.listButton}
                   onPress={async () => {
                     await setData("playlistId", item.id);
                     this.props.navigation.navigate("PlaylistCreator");

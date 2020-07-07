@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, ScrollView, KeyboardAvoidingView, Alert, } from 'react-native';
+import { View, ScrollView, KeyboardAvoidingView, } from 'react-native';
 import Mytextinput from '../components/Mytextinput.js';
+import { Mytext } from '../components/Mytext.js';
 import { ButtonOne } from '../components/MyButtons.js';
 import * as SQL from 'expo-sqlite';
 const db = SQL.openDatabase('UDB.db');
@@ -15,6 +16,7 @@ export default class UpdateUser extends React.Component {
       user_name: '',
       user_password: '',
       collected_user_password: '',
+      updated: '1',
     };
 
   }
@@ -55,23 +57,18 @@ export default class UpdateUser extends React.Component {
               [user_name, user_password, input_user_name],
               (tx, results) => {
                 if(results.rowsAffected>0){
-                  Alert.alert( 'Success', 'User updated successfully',
-                    [
-                      {text: 'Ok', onPress: () => that.props.navigation.navigate('HomeScreen')},
-                    ],
-                    { cancelable: false }
-                  );
+                  this.setState({ updated: '2' });
                 }else{
-                  Alert.alert('Updating Failed');
+                  this.setState({ updated: '3' });
                 }
               }
             );
           });
         }else{
-          Alert.alert('Please fill Password');
+          console.log('Please fill Password');
         }
       }else{
-        Alert.alert('Please enter correct old username or password');
+        this.setState({ updated: '4' });
       }
   };
  
@@ -115,6 +112,11 @@ export default class UpdateUser extends React.Component {
             <ButtonOne
               title="Update User"
               customClick={this.updateUser.bind(this)}
+            />
+            <Mytext
+            text  = {this.state.updated == '2' ? "Updated successfully"
+                    : this.state.updated == '3' ? "Update failed"
+                    : this.state.updated == '4' ? "Please enter correct old info" : ""}
             />
           </KeyboardAvoidingView>
         </ScrollView>

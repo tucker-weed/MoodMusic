@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, ScrollView, KeyboardAvoidingView, Alert } from 'react-native';
+import { View, ScrollView, KeyboardAvoidingView } from 'react-native';
+import { Mytext } from '../components/Mytext.js';
 import Mytextinput from '../components/Mytextinput.js';
 import { ButtonOne } from '../components/MyButtons.js';
 import { StackActions } from '@react-navigation/native';
@@ -12,34 +13,26 @@ export default class RegisterUser extends React.Component {
     this.state = {
       user_name: '',
       user_password: '',
+      registered: false,
     };
   }
   submit = () => {
-    let that = this;
+    const that = this;
     const { user_name, user_password } = this.state;
     
     db.transaction(function(tx) {
       tx.executeSql(
         'INSERT INTO table_u (user_name, user_password) VALUES (?,?)',
         [user_name, user_password],
-        (results) => {
-            Alert.alert(
-              'Success',
-              'You are registered successfully',
-              [
-                {
-                  text: 'Ok',
-                  onPress: () =>
-                  that.props.navigation.dispatch(StackActions.replace('HomeScreen', { registered: true })),
-                },
-              ],
-              { cancelable: false }
-            );
+        (results) => { 
+          that.setState({ registered: true }); 
         },
       );
     });
   };
   render() {
+    const toNav = this.state.registered ? "HomeScreenTwo" : "HomeScreen";
+    const params = this.state.registered ? true : false;
     return (
       <View 
       style={{
@@ -63,13 +56,17 @@ export default class RegisterUser extends React.Component {
               maxLength={20}
               style={{ padding:10 }}
             />
+            {this.state.registered ? null : 
             <ButtonOne
               title="Submit"
               customClick={this.submit.bind(this)}
-            />
+            />}
             <ButtonOne
               title="Mood Music Home"
-              customClick={() => this.props.navigation.dispatch(StackActions.replace('HomeScreen', { registered: false }))}
+              customClick={() => this.props.navigation.dispatch(StackActions.replace(toNav, { registered: params }))}
+            />
+            <Mytext
+            text = {this.state.registered ? "Registered successfully" : ""}
             />
           </KeyboardAvoidingView>
         </ScrollView>

@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Alert } from 'react-native';
+import { View } from 'react-native';
 import Mytextinput from '../components/Mytextinput.js';
+import { Mytext } from '../components/Mytext.js';
 import { LoginButton } from '../components/MyButtons.js';
 import { StackActions } from '@react-navigation/native';
 import * as SQL from 'expo-sqlite';
@@ -12,6 +13,8 @@ export default class LoginPage extends React.Component {
     this.state = {
       input_user_name: '',
       input_user_password: '',
+      userStatus: true,
+      passStatus: true,
     };
   }
   searchUser = () => {
@@ -27,12 +30,12 @@ export default class LoginPage extends React.Component {
             if (this.state.input_user_password == results.rows.item(0).user_password) {
               this.props.navigation.dispatch(StackActions.replace('HomeScreenTwo', {}));
             } else {
-              Alert.alert('Incorrect password');
+              this.setState({ passStatus: false })
             }
           } else {
-            Alert.alert('No user found');
             this.setState({
               userData: '',
+              userStatus: false 
             });
           }
         }
@@ -62,6 +65,14 @@ export default class LoginPage extends React.Component {
           title="Login"
           customClick={this.searchUser.bind(this)}
         />
+        {this.state.passStatus ? null : 
+        <Mytext
+        text = "Incorrect password"
+        />}
+        {this.state.userStatus ? null : 
+        <Mytext
+        text = "Incorrect username"
+        />}
       </View>
     );
   }

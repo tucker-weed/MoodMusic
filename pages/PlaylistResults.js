@@ -12,8 +12,7 @@ export default class PlaylistResults extends React.Component {
     this.state = {
       userInfo: null,
       token: null,
-      playlist: null,
-      playlistId: ""
+      playlist: null
     };
   }
 
@@ -52,25 +51,20 @@ export default class PlaylistResults extends React.Component {
   };
 
   activate = async () => {
-    const data = this.state.userInfo
-      ? this.state.userInfo
-      : await getData("userData");
-    const token = this.state.token
-      ? this.state.token
-      : await getData("accessToken");
-    const playlist = this.state.playlist
-      ? this.state.playlist
-      : await getData("playlistData");
-    const playlistId = this.state.playlistId
-      ? this.state.playlistId
-      : await getData("storagePlaylist");
+    const data = await getData("userData");
+    const token = await getData("accessToken");
+    const playlist = await getData("playlistData");
+    const playlistId = await getData("ourPlaylist");
 
     if (playlistId) {
       const url =
         "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
       const ids = [];
       for (i = 0; i < playlist.length; i++) {
-        ids.push("spotify:track:" + playlist[i].track.id);
+        ids.push(
+          "spotify:track:" +
+            (playlist[i]["track"] ? playlist[i].track.id : playlist[i].id)
+        );
       }
       await this.apiPut(url, token, ids);
     }
@@ -116,19 +110,42 @@ export default class PlaylistResults extends React.Component {
             renderItem={({ item }) => (
               <View
                 key={item.id}
-                style={{ backgroundColor: "black", padding: 5 }}
+                style={{
+                  flex: 1,
+                  backgroundColor: "black",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  padding: 5
+                }}
               >
-                <Text style={{ color: "white" }}>
-                  Track Id: {item.track.id}
+                <Text
+                  style={{
+                    color: "white",
+                    fontWeight: "bold",
+                    marginBottom: 10
+                  }}
+                >
+                  {item["track"] ? item.track.name : item.name}
                 </Text>
-                <Image
-                  style={styles.profileImage}
-                  source={
-                    item.track.album.images[0]
-                      ? { uri: item.track.album.images[0].url }
-                      : { uri: this.state.userInfo.images[0].url }
-                  }
-                />
+                {item["track"] ? (
+                  <Image
+                    style={styles.profileImage}
+                    source={
+                      item.track.album.images[0]
+                        ? { uri: item.track.album.images[0].url }
+                        : { uri: this.state.userInfo.images[0].url }
+                    }
+                  />
+                ) : (
+                  <Image
+                    style={styles.profileImage}
+                    source={
+                      item.album.images[0]
+                        ? { uri: item.album.images[0].url }
+                        : { uri: this.state.userInfo.images[0].url }
+                    }
+                  />
+                )}
               </View>
             )}
           />

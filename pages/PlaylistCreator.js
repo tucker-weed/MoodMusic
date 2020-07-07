@@ -37,22 +37,179 @@ export default class PlaylistCreator extends React.Component {
     });
   };
 
-  activate = async () => {
+  filterSongs = async (response, token, idString) => {
+    let filteredGet = [];
+    const songsUrl =
+      "https://api.spotify.com/v1/audio-features/?ids=" + idString;
+    const trackData = await this.apiGet(songsUrl, token);
+    let j = 0;
+    const existenceCheck =
+      trackData["data"] &&
+      trackData.data["audio_features"] &&
+      trackData.data.audio_features[j] &&
+      trackData.data.audio_features[j]["danceability"];
+    while (existenceCheck && j < trackData.data.audio_features.length) {
+      const euphoria =
+        trackData.data.audio_features[j].danceability * 100 +
+        trackData.data.audio_features[j].valence * 100;
+      const hype =
+        trackData.data.audio_features[j].tempo * 2 +
+        trackData.data.audio_features[j].energy * 150 +
+        trackData.data.audio_features[j].acousticness * 75 +
+        trackData.data.audio_features[j].danceability * 150;
+      if (
+        trackData.data.audio_features[j].tempo > this.state.tempo &&
+        euphoria > this.state.euphoria &&
+        hype > this.state.hype &&
+        (!this.state.isEnabled ||
+          trackData.data.audio_features[j].key == this.state.key)
+      ) {
+        filteredGet.push(
+          response.data["items"]
+            ? response.data.items[j]
+            : response.data.tracks[j]
+        );
+      }
+      j++;
+    }
+    return filteredGet;
+  };
+
+  getRandomInt = max => {
+    const min = 0;
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  };
+
+  createPlaylist = async (artistIds, token) => {
+    let filteredGet = [];
+    let accumulator = [];
+    let addedArtists = {};
+
+    const getRelated = async (artistIds, stop) => {
+      let accum = [];
+      let a = 0;
+
+      while (a < artistIds.length) {
+        const relatedUrl =
+          "https://api.spotify.com/v1/artists/" +
+          artistIds[a] +
+          "/related-artists";
+        const relatedR = await this.apiGet(relatedUrl, token);
+        let stopper = 0;
+        while (stopper < stop) {
+          if (relatedR && relatedR.data.artists[0]) {
+            const idToAdd =
+              relatedR.data.artists[
+                this.getRandomInt(relatedR.data.artists.length - 1)
+              ].id;
+            if (addedArtists[idToAdd]) {
+              stopper--;
+            } else {
+              accum.push(idToAdd);
+              addedArtists[idToAdd] = true;
+            }
+          }
+          stopper++;
+        }
+        a++;
+      }
+      return accum;
+    };
+
+    const ids = await getRelated(artistIds, 4);
+    let m = 0;
+    while (m < ids.length) {
+      accumulator.push(ids[m]);
+      m++;
+    }
+
+    let i = 0;
+    while (i < accumulator.length && filteredGet.length < 100) {
+      const url =
+        "https://api.spotify.com/v1/artists/" +
+        accumulator[i] +
+        "/top-tracks?country=from_token";
+      const newResponse = await this.apiGet(url, token);
+      if (newResponse) {
+        let index = 0;
+        let idString = "";
+        while (index < newResponse.data.tracks.length) {
+          if (newResponse.data.tracks.length - index == 1) {
+            idString += newResponse.data.tracks[index].id;
+          } else {
+            idString += newResponse.data.tracks[index].id + ",";
+          }
+          index++;
+        }
+        const toAdd = await this.filterSongs(newResponse, token, idString);
+        let p = 0;
+        while (p < toAdd.length && filteredGet.length < 100) {
+          filteredGet.push(toAdd[p]);
+          p++;
+        }
+      }
+      if (i == accumulator.length - 1 && filteredGet.length < 100) {
+        const ids = await getRelated(accumulator, 1);
+        let m = 0;
+        while (m < ids.length) {
+          accumulator.push(ids[m]);
+          m++;
+        }
+      }
+
+      i++;
+    }
+    return filteredGet;
+  };
+
+  activateCreate = async () => {
     const token = this.state.token
       ? this.state.token
       : await getData("accessToken");
-    const playlistId = this.state.access
-      ? this.state.access
-      : await getData("playlistId");
+    const playlistId = await getData("playlistId");
     const url =
       "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
     const response = await this.apiGet(url, token);
-    const filteredGet = [];
+
+    if (response) {
+      let stopper = 0;
+      let addedArtists = {};
+      let artistIds = [];
+      while (stopper < 5) {
+        const randomIndex = this.getRandomInt(response.data.items.length - 1);
+        if (response.data.items[randomIndex].track.artists[0]) {
+          const idToAdd = response.data.items[randomIndex].track.artists[0].id;
+          if (addedArtists[idToAdd]) {
+            stopper--;
+          } else {
+            artistIds.push(idToAdd);
+            addedArtists[idToAdd] = true;
+          }
+        }
+        stopper++;
+      }
+      const filteredGet = await this.createPlaylist(artistIds, token);
+      await setData("playlistData", filteredGet);
+      this.props.navigation.navigate("PlaylistResults");
+    } else {
+      console.log("ERROR: token expired");
+      this.setState({ userInfo: null, token: null, playlist: null });
+    }
+  };
+
+  activateFilter = async () => {
+    const token = this.state.token
+      ? this.state.token
+      : await getData("accessToken");
+    const playlistId = await getData("playlistId");
+    const url =
+      "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
+    const response = await this.apiGet(url, token);
 
     if (response) {
       let index = 0;
       let idString = "";
-
       while (index < response.data.items.length) {
         if (response.data.items.length - index == 1) {
           idString += response.data.items[index].track.id;
@@ -61,32 +218,7 @@ export default class PlaylistCreator extends React.Component {
         }
         index++;
       }
-
-      const songsUrl =
-        "https://api.spotify.com/v1/audio-features/?ids=" + idString;
-      const trackData = await this.apiGet(songsUrl, token);
-      let j = 0;
-
-      while (j < trackData.data.audio_features.length) {
-        const euphoria =
-          trackData.data.audio_features[j].danceability * 100 +
-          trackData.data.audio_features[j].valence * 100;
-        const hype =
-          trackData.data.audio_features[j].tempo * 2 +
-          trackData.data.audio_features[j].energy * 150 +
-          trackData.data.audio_features[j].acousticness * 75 +
-          trackData.data.audio_features[j].danceability * 150;
-        if (
-          trackData.data.audio_features[j].tempo > this.state.tempo &&
-          euphoria > this.state.euphoria &&
-          hype > this.state.hype &&
-          (!this.state.isEnabled ||
-            trackData.data.audio_features[j].key == this.state.key)
-        ) {
-          filteredGet.push(response.data.items[j]);
-        }
-        j++;
-      }
+      const filteredGet = await this.filterSongs(response, token, idString);
       await setData("playlistData", filteredGet);
       this.props.navigation.navigate("PlaylistResults");
     } else {
@@ -108,8 +240,11 @@ export default class PlaylistCreator extends React.Component {
           flexDirection: "column"
         }}
       >
-        <TouchableOpacity style={styles.button} onPress={this.activate}>
-          <Text style={styles.buttonText}>Create Playlist</Text>
+        <TouchableOpacity style={styles.button} onPress={this.activateFilter}>
+          <Text style={styles.buttonText}>Filter Playlist</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={this.activateCreate}>
+          <Text style={styles.buttonText}>Spawn Playlist</Text>
         </TouchableOpacity>
         <View style={localStyles.container}>
           <MytextTwo text={"Euphoria: " + this.state.euphoria} />

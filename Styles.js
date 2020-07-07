@@ -14,7 +14,13 @@ export const styles = StyleSheet.create({
   },
   loadButton: {
     backgroundColor: "#2FD566",
-    padding: 4
+    padding: 4,
+  },
+  listButton: {
+    backgroundColor: "#2FD566",
+    padding: 4,
+    paddingLeft: 150,
+    paddingRight: 150,
   },
   whiteText: {
     color: 'white',
