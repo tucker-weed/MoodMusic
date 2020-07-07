@@ -18,7 +18,8 @@ export default class PlaylistCreator extends React.Component {
       tempo: 0.0,
       euphoria: 0.0,
       hype: 0.0,
-      key: 0
+      key: 0,
+      popularity: 0
     };
   }
 
@@ -64,11 +65,11 @@ export default class PlaylistCreator extends React.Component {
         (!this.state.isEnabled ||
           trackData.data.audio_features[j].key == this.state.key)
       ) {
-        filteredGet.push(
-          response.data["items"]
-            ? response.data.items[j]
-            : response.data.tracks[j]
-        );
+        if (response.data["items"] && response.data.items[j].track.popularity > this.state.popularity) {
+          filteredGet.push(response.data.items[j]);
+        } else if (!response.data["items"] && response.data.tracks[j].popularity > this.state.popularity) {
+          filteredGet.push(response.data.tracks[j]);
+        }
       }
       j++;
     }
@@ -266,6 +267,17 @@ export default class PlaylistCreator extends React.Component {
             minimumTrackTintColor="#FFFFFF"
             maximumTrackTintColor="#000000"
             onValueChange={val => this.setState({ hype: +val.toFixed(2) })}
+          />
+        </View>
+        <View style={localStyles.container}>
+          <Mytext text={"Popularity " + this.state.popularity} />
+          <Slider
+            style={{ width: 300, height: 40 }}
+            minimumValue={0}
+            maximumValue={100}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="#000000"
+            onValueChange={val => this.setState({ popularity: Math.round(val) })}
           />
         </View>
         <View style={localStyles.container}>
