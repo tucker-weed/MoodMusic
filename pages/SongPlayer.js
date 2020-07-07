@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Image } from "react-native";
+import { View, Image, Alert } from "react-native";
 import axios from "axios";
 import { getData } from "../LocalStorage.js";
 import { PlayerButton } from "../components/MyButtons.js";
@@ -15,13 +15,6 @@ export default class SongPlayer extends React.Component {
     }
   }
 
-  /**
-   * Requests information based on url and gives a response
-   *
-   * @param url - the url of the spotify api with a given endpoint
-   * @param token - the authorization token to pass to the api
-   * @returns - a json object being the api response, or null
-   */
   apiGetTrackImage = async token => {
     let img = ['',''];
     const response = await axios.get('https://api.spotify.com/v1/me/player', {
@@ -37,6 +30,20 @@ export default class SongPlayer extends React.Component {
     return img;
   };
 
+  apiGetContextUri = async token => {
+    let uri = '';
+    const response = await axios.get('https://api.spotify.com/v1/me/player', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (response && response.data['context']) {
+      uri = response.data.context.uri;
+    }
+    return uri;
+  };
+
   apiPost = async (url, token) => {
     await axios.post(url, {}, {
         headers: {
@@ -49,7 +56,7 @@ export default class SongPlayer extends React.Component {
 
   apiPutNav = async (url, token, id) => {
     const jsonData = {
-      context_uri: "spotify:playlist:"+id,
+      context_uri: "spotify:user:12168726728:spotify:playlist:"+id,
       offset: {
         position: 0
       }  
@@ -78,22 +85,30 @@ export default class SongPlayer extends React.Component {
   activateNext = async () => {
     const token = await getData("accessToken");
     try {
-        await this.apiPost('https://api.spotify.com/v1/me/player/next', token)
-        const img = await this.apiGetTrackImage(token);
+      await this.apiPost('https://api.spotify.com/v1/me/player/next', token);
+      await this.apiGetTrackImage(token);
+      await this.apiGetTrackImage(token);
+      this.apiGetTrackImage(token).then( async img => {
         this.setState({ playing: true, current: img[0], songName: img[1] });
+      });
     } catch (e) {
-        console.log(e);
+      Alert.alert('Please connect a spotify device');
+      console.log(e);
     }
   };
 
   activateBack = async () => {
     const token = await getData("accessToken");
     try {
-        await this.apiPost('https://api.spotify.com/v1/me/player/previous', token);
-        const img = await this.apiGetTrackImage(token);
-        this.setState({ playing: true, current: img[0], songName: img[1] });
+      await this.apiPost('https://api.spotify.com/v1/me/player/previous', token);
+      await this.apiGetTrackImage(token)
+      await this.apiGetTrackImage(token);
+      this.apiGetTrackImage(token).then( async img => {
+          this.setState({ playing: true, current: img[0], songName: img[1] });
+      });
     } catch (e) {
-        console.log(e);
+      Alert.alert('Please connect a spotify device');
+      console.log(e);
     }
   };
 
@@ -101,33 +116,30 @@ export default class SongPlayer extends React.Component {
     const token = await getData("accessToken");
     const id = await getData('mmPlaylist');
     try {
-        if (this.state.navigated) {
-          this.setState({ playing: true });
-          await this.apiPutRegular('https://api.spotify.com/v1/me/player/play', token);
-        } else {
-          const img = await this.apiGetTrackImage(token);
-          this.setState({ navigated: true, playing: true, current: img[0], songName: img[1] });
-          await this.apiPutNav('https://api.spotify.com/v1/me/player/play', token, id);
-        }
+      const img = await this.apiGetTrackImage(token);
+      const uri = await this.apiGetContextUri(token);
+      if (this.state.navigated || uri === "spotify:user:12168726728:playlist:"+id) {
+        await this.apiPutRegular('https://api.spotify.com/v1/me/player/play', token);
+        this.setState({ playing: true, current: img[0], songName: img[1] });
+      } else {
+        await this.apiPutNav('https://api.spotify.com/v1/me/player/play', token, id);
+        this.setState({ navigated: true, playing: true, current: img[0], songName: img[1] });
+      }
     } catch (e) {
-        console.log(e);
+      Alert.alert('Please connect a spotify device');
+      console.log(e);
     }
   };
 
   activatePause = async () => {
     const token = await getData("accessToken");
-    const id = await getData('mmPlaylist');
     try {
-      if (this.state.navigated) {
-        this.setState({ playing: false });
-        await this.apiPutRegular('https://api.spotify.com/v1/me/player/pause', token);
-      } else {
-        const img = await this.apiGetTrackImage(token);
-        this.setState({ navigated: true, playing: false, current: img[0], songName: img[1] });
-        await this.apiPutNav('https://api.spotify.com/v1/me/player/pause', token, id);
-      }
+      const img = await this.apiGetTrackImage(token);
+      await this.apiPutRegular('https://api.spotify.com/v1/me/player/pause', token);
+      this.setState({ playing: false, current: img[0], songName: img[1] });
     } catch (e) {
-        console.log(e);
+      Alert.alert('Please connect a spotify device');
+      console.log(e);
     }
   };
 
