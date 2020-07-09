@@ -86,6 +86,7 @@ export default class PlaylistCreator extends React.Component {
     let filteredGet = [];
     let accumulator = [];
     let addedArtists = {};
+    const start = new Date().getTime();
 
     const getRelated = async (artistIds, stop) => {
       let accum = [];
@@ -118,15 +119,11 @@ export default class PlaylistCreator extends React.Component {
       return accum;
     };
 
-    const ids = await getRelated(artistIds, 4);
-    let m = 0;
-    while (m < ids.length) {
-      accumulator.push(ids[m]);
-      m++;
-    }
-
+    const ids = await getRelated(artistIds, 1);
+    accumulator.push(...ids);
     let i = 0;
-    while (i < accumulator.length && filteredGet.length < 100) {
+
+    while (i < accumulator.length && filteredGet.length < 100 && new Date().getTime() - start < 30000) {
       const url =
         "https://api.spotify.com/v1/artists/" +
         accumulator[i] +
@@ -150,7 +147,8 @@ export default class PlaylistCreator extends React.Component {
           p++;
         }
       }
-      if (i == accumulator.length - 1 && filteredGet.length < 100) {
+
+      if (i == accumulator.length - 1 && filteredGet.length < 100 && new Date().getTime() - start < 30000) {
         const ids = await getRelated(accumulator, 1);
         let m = 0;
         while (m < ids.length) {
@@ -177,13 +175,10 @@ export default class PlaylistCreator extends React.Component {
       let stopper = 0;
       let addedArtists = {};
       let artistIds = [];
-      while (stopper < 5) {
-        const randomIndex = this.getRandomInt(response.data.items.length - 1);
-        if (response.data.items[randomIndex].track.artists[0]) {
-          const idToAdd = response.data.items[randomIndex].track.artists[0].id;
-          if (addedArtists[idToAdd]) {
-            stopper--;
-          } else {
+      while (stopper < response.data.items.length) {
+        if (response.data.items[stopper].track.artists[0]) {
+          const idToAdd = response.data.items[stopper].track.artists[0].id;
+          if (!addedArtists[idToAdd]) {
             artistIds.push(idToAdd);
             addedArtists[idToAdd] = true;
           }
