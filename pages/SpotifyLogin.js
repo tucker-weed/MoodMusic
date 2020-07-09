@@ -1,5 +1,6 @@
 import React from "react";
 import { TouchableOpacity, Text, View, Image } from "react-native";
+import { StackActions } from "@react-navigation/native";
 import * as AuthSession from "expo-auth-session";
 import { FontAwesome } from "@expo/vector-icons";
 import axios from "axios";
@@ -42,7 +43,7 @@ export default class SpotifyLogin extends React.Component {
   };
 
   nav = () => {
-    this.props.navigation.navigate("MoodHome");
+    this.props.navigation.dispatch(StackActions.replace("MoodHome"));
   };
 
   /**
@@ -128,6 +129,15 @@ export default class SpotifyLogin extends React.Component {
             <Text style={styles.buttonText}>Login to Spotify</Text>
           </TouchableOpacity>
         )}
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() =>
+                this.props.navigation.dispatch(StackActions.replace("HomeScreenTwo"))
+              }
+            >
+              <Text style={styles.buttonText}>Back to Home</Text>
+            </TouchableOpacity>
 
         {this.state.didError
           ? this.displayError()

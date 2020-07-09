@@ -4,6 +4,8 @@ import { ButtonOne, LoginButton } from "../components/MyButtons.js";
 import { StackActions } from "@react-navigation/native";
 import { FontAwesome } from "@expo/vector-icons";
 import { Mytext } from "../components/Mytext.js";
+import { getData } from "../LocalStorage.js";
+import axios from "axios";
 import * as SQL from "expo-sqlite";
 const db = SQL.openDatabase("UDB.db");
 
@@ -16,7 +18,7 @@ export default class HomeScreenTwo extends React.Component {
       txn.executeSql(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='table_u'",
         [],
-        function(tx, res) {
+        function(_, res) {
           if (res.rows.length == 0) {
             txn.executeSql(
               "CREATE TABLE IF NOT EXISTS table_u(user_name VARCHAR(20), user_password VARCHAR(20))",
@@ -27,6 +29,25 @@ export default class HomeScreenTwo extends React.Component {
       );
     });
   }
+
+  apiGet = async (url, token) => {
+    return await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  };
+
+  toNav = async () => {
+    const token = await getData("accessToken");
+    const response = await this.apiGet(`https://api.spotify.com/v1/me`, token);
+
+    if (response["data"]) {
+      this.props.navigation.dispatch(StackActions.replace("MoodHome"));
+    } else {
+      this.props.navigation.dispatch(StackActions.replace("SpotifyLogin"));
+    }
+  };
 
   render() {
     return (
@@ -48,13 +69,10 @@ export default class HomeScreenTwo extends React.Component {
         <ButtonOne
           title="Delete"
           customClick={() =>
-            this.props.navigation.dispatch(StackActions.replace("Delete", {}))
+            this.props.navigation.dispatch(StackActions.replace("Delete"))
           }
         />
-        <LoginButton
-          title="Spotify"
-          customClick={() => this.props.navigation.navigate("SpotifyLogin")}
-        />
+        <LoginButton title="Spotify" customClick={this.toNav} />
         <View style={styles.container}>
           <FontAwesome name="spotify" color="#2FD566" size={128} />
         </View>
@@ -62,4 +80,3 @@ export default class HomeScreenTwo extends React.Component {
     );
   }
 }
-

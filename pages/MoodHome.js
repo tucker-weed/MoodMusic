@@ -1,5 +1,6 @@
 import React from "react";
 import { FlatList, TouchableOpacity, Text, View, Image } from "react-native";
+import { StackActions } from "@react-navigation/native";
 import axios from "axios";
 
 import { styles } from "../Styles.js";
@@ -33,7 +34,7 @@ export default class MoodHome extends React.Component {
   apiPost = async (url, token) => {
     const jsonData = {
       name: "MoodMusicPlaylist",
-      public: true,
+      public: true
     };
     return await axios.post(
       url,
@@ -98,6 +99,16 @@ export default class MoodHome extends React.Component {
         <TouchableOpacity style={styles.button} onPress={this.activate}>
           <Text style={styles.buttonText}>Search Your Playlists</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() =>
+            this.props.navigation.dispatch(
+              StackActions.replace("HomeScreenTwo")
+            )
+          }
+        >
+          <Text style={styles.buttonText}>Back to Home</Text>
+        </TouchableOpacity>
 
         {this.state.playlists ? (
           <FlatList
@@ -145,7 +156,9 @@ export default class MoodHome extends React.Component {
                   style={styles.listButton}
                   onPress={async () => {
                     await setData("playlistId", item.id);
-                    this.props.navigation.navigate("PlaylistCreator");
+                    this.props.navigation.dispatch(
+                      StackActions.replace("PlaylistCreator")
+                    );
                   }}
                 >
                   <Text style={styles.buttonText}>Load</Text>
@@ -158,4 +171,3 @@ export default class MoodHome extends React.Component {
     );
   }
 }
-

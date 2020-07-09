@@ -60,11 +60,13 @@ export default class PlaylistResults extends React.Component {
       const url =
         "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
       const ids = [];
-      for (i = 0; i < playlist.length; i++) {
+      let i = 0;
+      while (i < playlist.length) {
         ids.push(
           "spotify:track:" +
             (playlist[i]["track"] ? playlist[i].track.id : playlist[i].id)
         );
+        i++;
       }
       await this.apiPut(url, token, ids);
     }
@@ -154,4 +156,3 @@ export default class PlaylistResults extends React.Component {
     );
   }
 }
-

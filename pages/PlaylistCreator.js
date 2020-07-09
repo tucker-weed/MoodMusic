@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, TouchableOpacity, Text, View, Switch } from "react-native";
+import { StackActions } from "@react-navigation/native";
 import Slider from "@react-native-community/slider";
 import { Mytext, MytextTwo } from "../components/Mytext.js";
 import axios from "axios";
@@ -66,9 +67,15 @@ export default class PlaylistCreator extends React.Component {
         (!this.state.isEnabled ||
           trackData.data.audio_features[j].key == this.state.key)
       ) {
-        if (response.data["items"] && response.data.items[j].track.popularity > this.state.popularity) {
+        if (
+          response.data["items"] &&
+          response.data.items[j].track.popularity > this.state.popularity
+        ) {
           filteredGet.push(response.data.items[j]);
-        } else if (!response.data["items"] && response.data.tracks[j].popularity > this.state.popularity) {
+        } else if (
+          !response.data["items"] &&
+          response.data.tracks[j].popularity > this.state.popularity
+        ) {
           filteredGet.push(response.data.tracks[j]);
         }
       }
@@ -120,11 +127,19 @@ export default class PlaylistCreator extends React.Component {
       return accum;
     };
 
+    const timeout = deadline => {
+      return new Date().getTime() - start >= deadline;
+    };
+
     const ids = await getRelated(artistIds, 1);
     accumulator.push(...ids);
     let i = 0;
 
-    while (i < accumulator.length && filteredGet.length < 100 && new Date().getTime() - start < 30000) {
+    while (
+      i < accumulator.length &&
+      filteredGet.length < 100 &&
+      !timeout(30000)
+    ) {
       const url =
         "https://api.spotify.com/v1/artists/" +
         accumulator[i] +
@@ -149,7 +164,11 @@ export default class PlaylistCreator extends React.Component {
         }
       }
 
-      if (i == accumulator.length - 1 && filteredGet.length < 100 && new Date().getTime() - start < 30000) {
+      if (
+        i == accumulator.length - 1 &&
+        filteredGet.length < 100 &&
+        !timeout(30000)
+      ) {
         const ids = await getRelated(accumulator, 1);
         let m = 0;
         while (m < ids.length) {
@@ -174,7 +193,7 @@ export default class PlaylistCreator extends React.Component {
     const response = await this.apiGet(url, token);
 
     this.setState({ creating: true });
-    
+
     if (response) {
       let stopper = 0;
       let addedArtists = {};
@@ -200,6 +219,7 @@ export default class PlaylistCreator extends React.Component {
   };
 
   activateFilter = async () => {
+    const that = this;
     const token = this.state.token
       ? this.state.token
       : await getData("accessToken");
@@ -207,6 +227,8 @@ export default class PlaylistCreator extends React.Component {
     const url =
       "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
     const response = await this.apiGet(url, token);
+
+    this.setState({ creating: true });
 
     if (response) {
       let index = 0;
@@ -219,12 +241,13 @@ export default class PlaylistCreator extends React.Component {
         }
         index++;
       }
-      const filteredGet = await this.filterSongs(response, token, idString);
+      const filteredGet = await that.filterSongs(response, token, idString);
       await setData("playlistData", filteredGet);
-      this.props.navigation.navigate("PlaylistResults");
+      this.setState({ creating: false });
+      that.props.navigation.navigate("PlaylistResults");
     } else {
       console.log("ERROR: token expired");
-      this.setState({ userInfo: null, token: null, playlist: null });
+      that.setState({ userInfo: null, token: null, playlist: null });
     }
   };
 
@@ -241,15 +264,32 @@ export default class PlaylistCreator extends React.Component {
           flexDirection: "column"
         }}
       >
-        <TouchableOpacity style={styles.button} onPress={this.activateFilter}>
-          <Text style={styles.buttonText}>Filter Playlist</Text>
-        </TouchableOpacity>
-
-        {this.state.creating
-        ? <Mytext text={"Creating Playlist..."} />
-        : <TouchableOpacity style={styles.button} onPress={this.activateCreate}>
-            <Text style={styles.buttonText}>Spawn Playlist</Text>
-          </TouchableOpacity>}
+        {this.state.creating ? (
+          <Mytext text={"Creating Playlist..."} />
+        ) : (
+          <View>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={this.activateFilter}
+            >
+              <Text style={styles.buttonText}>Filter Playlist</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={this.activateCreate}
+            >
+              <Text style={styles.buttonText}>Spawn Playlist</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() =>
+                this.props.navigation.dispatch(StackActions.replace("MoodHome"))
+              }
+            >
+              <Text style={styles.buttonText}>Back to User Playlists</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={localStyles.container}>
           <MytextTwo text={"Euphoria: " + this.state.euphoria} />
@@ -259,7 +299,7 @@ export default class PlaylistCreator extends React.Component {
             maximumValue={200}
             minimumTrackTintColor="#FFFFFF"
             maximumTrackTintColor="#000000"
-            onValueChange={val => this.setState({ euphoria: +val.toFixed(2) })}
+            onValueChange={val => this.setState({ euphoria: Math.round(val) })}
           />
         </View>
         <View style={localStyles.container}>
@@ -270,18 +310,20 @@ export default class PlaylistCreator extends React.Component {
             maximumValue={700}
             minimumTrackTintColor="#FFFFFF"
             maximumTrackTintColor="#000000"
-            onValueChange={val => this.setState({ hype: +val.toFixed(2) })}
+            onValueChange={val => this.setState({ hype: Math.round(val) })}
           />
         </View>
         <View style={localStyles.container}>
-          <Mytext text={"Popularity " + this.state.popularity} />
+          <Mytext text={"Popularity: " + this.state.popularity} />
           <Slider
             style={{ width: 300, height: 40 }}
             minimumValue={0}
             maximumValue={100}
             minimumTrackTintColor="#FFFFFF"
             maximumTrackTintColor="#000000"
-            onValueChange={val => this.setState({ popularity: Math.round(val) })}
+            onValueChange={val =>
+              this.setState({ popularity: Math.round(val) })
+            }
           />
         </View>
         <View style={localStyles.container}>
@@ -292,7 +334,7 @@ export default class PlaylistCreator extends React.Component {
             maximumValue={200}
             minimumTrackTintColor="#FFFFFF"
             maximumTrackTintColor="#000000"
-            onValueChange={val => this.setState({ tempo: +val.toFixed(2) })}
+            onValueChange={val => this.setState({ tempo: Math.round(val) })}
           />
         </View>
         <View style={localStyles.container}>
@@ -329,4 +371,3 @@ const localStyles = StyleSheet.create({
     marginRight: 35
   }
 });
-
