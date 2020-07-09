@@ -1,5 +1,5 @@
-import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import React from "react";
+import { TouchableOpacity, Text, StyleSheet } from "react-native";
 
 export const ButtonOne = props => {
   return (
@@ -15,7 +15,7 @@ export const LoginButton = props => {
       <Text style={buttonStyles2.text}>{props.title}</Text>
     </TouchableOpacity>
   );
-}
+};
 
 export const DangerButton = props => {
   return (
@@ -23,7 +23,7 @@ export const DangerButton = props => {
       <Text style={buttonStyles3.text}>{props.title}</Text>
     </TouchableOpacity>
   );
-}
+};
 
 export const PlayerButton = props => {
   return (
@@ -31,72 +31,72 @@ export const PlayerButton = props => {
       <Text style={buttonStyles4.text}>{props.title}</Text>
     </TouchableOpacity>
   );
-}
+};
 
 const buttonStyles1 = StyleSheet.create({
   button: {
-    alignItems: 'center',
-    backgroundColor: '#2FD566',
-    color: '#ffffff',
+    alignItems: "center",
+    backgroundColor: "#2FD566",
+    color: "#ffffff",
     padding: 10,
     marginTop: 16,
     marginLeft: 35,
-    marginRight: 35,
+    marginRight: 35
   },
   text: {
-    color: '#000',
-    fontWeight: 'bold',
-    fontSize: 20,
-  },
+    color: "#000",
+    fontWeight: "bold",
+    fontSize: 20
+  }
 });
 
 const buttonStyles2 = StyleSheet.create({
   button: {
-    alignItems: 'center',
-    backgroundColor: '#2FD566',
-    color: 'white',
+    alignItems: "center",
+    backgroundColor: "#2FD566",
+    color: "white",
     padding: 10,
     marginTop: 16,
     marginLeft: 35,
-    marginRight: 35,
+    marginRight: 35
   },
   text: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 20,
-  },
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 20
+  }
 });
 
 const buttonStyles3 = StyleSheet.create({
   button: {
-    alignItems: 'center',
-    backgroundColor: '#2FD566',
-    color: 'white',
+    alignItems: "center",
+    backgroundColor: "#2FD566",
+    color: "white",
     padding: 10,
     marginTop: 16,
     marginLeft: 35,
-    marginRight: 35,
+    marginRight: 35
   },
   text: {
-    color: 'red',
-    fontWeight: 'bold',
-    fontSize: 20,
-  },
+    color: "red",
+    fontWeight: "bold",
+    fontSize: 20
+  }
 });
 
 const buttonStyles4 = StyleSheet.create({
   button: {
-    alignItems: 'center',
-    backgroundColor: '#2FD566',
-    color: 'white',
+    alignItems: "center",
+    backgroundColor: "#2FD566",
+    color: "white",
     padding: 10,
     marginTop: 16,
     marginLeft: 47,
-    marginRight: 48,
+    marginRight: 48
   },
   text: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 20,
-  },
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 20
+  }
 });

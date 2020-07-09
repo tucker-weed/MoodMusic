@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, TextInput } from 'react-native';
+import React from "react";
+import { View, TextInput } from "react-native";
 const Mytextinput = props => {
   return (
     <View
@@ -7,9 +7,10 @@ const Mytextinput = props => {
         marginLeft: 35,
         marginRight: 35,
         marginTop: 10,
-        borderColor: '#007FFF',
-        borderWidth: 1,
-      }}>
+        borderColor: "#007FFF",
+        borderWidth: 1
+      }}
+    >
       <TextInput
         underlineColorAndroid="transparent"
         placeholder={props.placeholder}
@@ -23,9 +24,11 @@ const Mytextinput = props => {
         style={props.style}
         blurOnSubmit={false}
         value={props.value}
-        style=
-        {{
-          height: 40, borderColor: 'white', borderWidth: 1, color : "yellow"
+        style={{
+          height: 40,
+          borderColor: "white",
+          borderWidth: 1,
+          color: "yellow"
         }}
       />
     </View>
