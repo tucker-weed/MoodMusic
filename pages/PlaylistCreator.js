@@ -40,11 +40,11 @@ export default class PlaylistCreator extends React.Component {
     });
   };
 
-  filterSongs = async (response, token, idString) => {
+  filterSongs = async (that, response, token, idString) => {
     let filteredGet = [];
     const songsUrl =
       "https://api.spotify.com/v1/audio-features/?ids=" + idString;
-    const trackData = await this.apiGet(songsUrl, token);
+    const trackData = await that.apiGet(songsUrl, token);
     let j = 0;
     const existenceCheck =
       trackData["data"] &&
@@ -61,20 +61,20 @@ export default class PlaylistCreator extends React.Component {
         trackData.data.audio_features[j].acousticness * 75 +
         trackData.data.audio_features[j].danceability * 150;
       if (
-        trackData.data.audio_features[j].tempo > this.state.tempo &&
-        euphoria > this.state.euphoria &&
-        hype > this.state.hype &&
-        (!this.state.isEnabled ||
-          trackData.data.audio_features[j].key == this.state.key)
+        trackData.data.audio_features[j].tempo > that.state.tempo &&
+        euphoria > that.state.euphoria &&
+        hype > that.state.hype &&
+        (!that.state.isEnabled ||
+          trackData.data.audio_features[j].key == that.state.key)
       ) {
         if (
           response.data["items"] &&
-          response.data.items[j].track.popularity > this.state.popularity
+          response.data.items[j].track.popularity > that.state.popularity
         ) {
           filteredGet.push(response.data.items[j]);
         } else if (
           !response.data["items"] &&
-          response.data.tracks[j].popularity > this.state.popularity
+          response.data.tracks[j].popularity > that.state.popularity
         ) {
           filteredGet.push(response.data.tracks[j]);
         }
@@ -156,7 +156,12 @@ export default class PlaylistCreator extends React.Component {
           }
           index++;
         }
-        const toAdd = await that.filterSongs(newResponse, token, idString);
+        const toAdd = await that.filterSongs(
+          that,
+          newResponse,
+          token,
+          idString
+        );
         let p = 0;
         while (p < toAdd.length && filteredGet.length < 100) {
           filteredGet.push(toAdd[p]);
@@ -241,7 +246,12 @@ export default class PlaylistCreator extends React.Component {
         }
         index++;
       }
-      const filteredGet = await that.filterSongs(response, token, idString);
+      const filteredGet = await that.filterSongs(
+        that,
+        response,
+        token,
+        idString
+      );
       await setData("playlistData", filteredGet);
       this.setState({ creating: false });
       that.props.navigation.navigate("PlaylistResults");
@@ -288,73 +298,75 @@ export default class PlaylistCreator extends React.Component {
             >
               <Text style={styles.buttonText}>Back to User Playlists</Text>
             </TouchableOpacity>
+
+            <View style={localStyles.container}>
+              <MytextTwo text={"Euphoria: " + this.state.euphoria} />
+              <Slider
+                style={{ width: 300, height: 40 }}
+                minimumValue={0}
+                maximumValue={200}
+                minimumTrackTintColor="#FFFFFF"
+                maximumTrackTintColor="#000000"
+                onValueChange={val =>
+                  this.setState({ euphoria: Math.round(val) })
+                }
+              />
+            </View>
+            <View style={localStyles.container}>
+              <MytextTwo text={"Hype: " + this.state.hype} />
+              <Slider
+                style={{ width: 300, height: 40 }}
+                minimumValue={0}
+                maximumValue={700}
+                minimumTrackTintColor="#FFFFFF"
+                maximumTrackTintColor="#000000"
+                onValueChange={val => this.setState({ hype: Math.round(val) })}
+              />
+            </View>
+            <View style={localStyles.container}>
+              <Mytext text={"Popularity: " + this.state.popularity} />
+              <Slider
+                style={{ width: 300, height: 40 }}
+                minimumValue={0}
+                maximumValue={100}
+                minimumTrackTintColor="#FFFFFF"
+                maximumTrackTintColor="#000000"
+                onValueChange={val =>
+                  this.setState({ popularity: Math.round(val) })
+                }
+              />
+            </View>
+            <View style={localStyles.container}>
+              <Mytext text={"Tempo: " + this.state.tempo} />
+              <Slider
+                style={{ width: 300, height: 40 }}
+                minimumValue={0}
+                maximumValue={200}
+                minimumTrackTintColor="#FFFFFF"
+                maximumTrackTintColor="#000000"
+                onValueChange={val => this.setState({ tempo: Math.round(val) })}
+              />
+            </View>
+            <View style={localStyles.container}>
+              <Mytext text={"Key: " + this.state.key} />
+              <Switch
+                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                thumbColor="#f4f3f4"
+                ios_backgroundColor="#3e3e3e"
+                onValueChange={this.toggleSwitch}
+                value={this.state.isEnabled}
+              />
+              <Slider
+                style={{ width: 300, height: 40 }}
+                minimumValue={0}
+                maximumValue={11}
+                minimumTrackTintColor="#FFFFFF"
+                maximumTrackTintColor="#000000"
+                onValueChange={val => this.setState({ key: Math.round(val) })}
+              />
+            </View>
           </View>
         )}
-
-        <View style={localStyles.container}>
-          <MytextTwo text={"Euphoria: " + this.state.euphoria} />
-          <Slider
-            style={{ width: 300, height: 40 }}
-            minimumValue={0}
-            maximumValue={200}
-            minimumTrackTintColor="#FFFFFF"
-            maximumTrackTintColor="#000000"
-            onValueChange={val => this.setState({ euphoria: Math.round(val) })}
-          />
-        </View>
-        <View style={localStyles.container}>
-          <MytextTwo text={"Hype: " + this.state.hype} />
-          <Slider
-            style={{ width: 300, height: 40 }}
-            minimumValue={0}
-            maximumValue={700}
-            minimumTrackTintColor="#FFFFFF"
-            maximumTrackTintColor="#000000"
-            onValueChange={val => this.setState({ hype: Math.round(val) })}
-          />
-        </View>
-        <View style={localStyles.container}>
-          <Mytext text={"Popularity: " + this.state.popularity} />
-          <Slider
-            style={{ width: 300, height: 40 }}
-            minimumValue={0}
-            maximumValue={100}
-            minimumTrackTintColor="#FFFFFF"
-            maximumTrackTintColor="#000000"
-            onValueChange={val =>
-              this.setState({ popularity: Math.round(val) })
-            }
-          />
-        </View>
-        <View style={localStyles.container}>
-          <Mytext text={"Tempo: " + this.state.tempo} />
-          <Slider
-            style={{ width: 300, height: 40 }}
-            minimumValue={0}
-            maximumValue={200}
-            minimumTrackTintColor="#FFFFFF"
-            maximumTrackTintColor="#000000"
-            onValueChange={val => this.setState({ tempo: Math.round(val) })}
-          />
-        </View>
-        <View style={localStyles.container}>
-          <Mytext text={"Key: " + this.state.key} />
-          <Switch
-            trackColor={{ false: "#767577", true: "#81b0ff" }}
-            thumbColor="#f4f3f4"
-            ios_backgroundColor="#3e3e3e"
-            onValueChange={this.toggleSwitch}
-            value={this.state.isEnabled}
-          />
-          <Slider
-            style={{ width: 300, height: 40 }}
-            minimumValue={0}
-            maximumValue={11}
-            minimumTrackTintColor="#FFFFFF"
-            maximumTrackTintColor="#000000"
-            onValueChange={val => this.setState({ key: Math.round(val) })}
-          />
-        </View>
       </View>
     );
   }
