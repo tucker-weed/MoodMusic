@@ -1,5 +1,5 @@
 import React from "react";
-import { View } from "react-native";
+import { View, Alert } from "react-native";
 import { ButtonOne, LoginButton } from "../components/MyButtons.js";
 import { StackActions } from "@react-navigation/native";
 import { FontAwesome } from "@expo/vector-icons";
@@ -40,11 +40,12 @@ export default class HomeScreenTwo extends React.Component {
 
   toNav = async () => {
     const token = await getData("accessToken");
-    const response = await this.apiGet(`https://api.spotify.com/v1/me`, token);
 
-    if (response["data"]) {
+    try {
+      await this.apiGet("https://api.spotify.com/v1/me", token);
       this.props.navigation.dispatch(StackActions.replace("MoodHome"));
-    } else {
+    } catch (e) {
+      console.log(e);
       this.props.navigation.dispatch(StackActions.replace("SpotifyLogin"));
     }
   };
