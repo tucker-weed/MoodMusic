@@ -74,3 +74,4 @@ export default class RegisterUser extends React.Component {
     );
   }
 }
+

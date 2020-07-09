@@ -77,3 +77,4 @@ export default class LoginPage extends React.Component {
     );
   }
 }
+

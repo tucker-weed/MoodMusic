@@ -329,3 +329,4 @@ const localStyles = StyleSheet.create({
     marginRight: 35
   }
 });
+
