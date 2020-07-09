@@ -30,7 +30,7 @@ export default class LoginPage extends React.Component {
             if (this.state.input_user_password == results.rows.item(0).user_password) {
               this.props.navigation.dispatch(StackActions.replace('HomeScreenTwo', {}));
             } else {
-              this.setState({ passStatus: false })
+              this.setState({ userStatus: true, passStatus: false })
             }
           } else {
             this.setState({

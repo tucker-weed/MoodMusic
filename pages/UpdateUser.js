@@ -42,7 +42,6 @@ export default class UpdateUser extends React.Component {
   };
 
   updateUser = () => {
-    var that=this;
     const { input_user_name } = this.state;
     const { user_name } = this.state;
     const { user_password } = this.state;
@@ -55,7 +54,7 @@ export default class UpdateUser extends React.Component {
             tx.executeSql(
               'UPDATE table_u SET user_name=?, user_password=? WHERE user_name=?',
               [user_name, user_password, input_user_name],
-              (tx, results) => {
+              (_, results) => {
                 if(results.rowsAffected>0){
                   this.setState({ updated: '2' });
                 }else{

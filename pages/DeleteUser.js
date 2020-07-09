@@ -23,7 +23,7 @@ export default class UpdateUser extends React.Component {
       tx.executeSql(
         'DELETE FROM  table_u where user_name=?',
         [input_user_name],
-        (tx, results) => {
+        (_, results) => {
           if (results.rowsAffected > 0) {
             that.setState({ deleted: '2', })
           } else {
