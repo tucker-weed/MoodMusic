@@ -15,6 +15,7 @@ export default class PlaylistCreator extends React.Component {
       token: null,
       playlist: null,
       isEnabled: false,
+      creating: false,
       tempo: 0.0,
       euphoria: 0.0,
       hype: 0.0,
@@ -82,7 +83,7 @@ export default class PlaylistCreator extends React.Component {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   };
 
-  createPlaylist = async (artistIds, token) => {
+  createPlaylist = async (that, artistIds, token) => {
     let filteredGet = [];
     let accumulator = [];
     let addedArtists = {};
@@ -97,13 +98,13 @@ export default class PlaylistCreator extends React.Component {
           "https://api.spotify.com/v1/artists/" +
           artistIds[a] +
           "/related-artists";
-        const relatedR = await this.apiGet(relatedUrl, token);
+        const relatedR = await that.apiGet(relatedUrl, token);
         let stopper = 0;
         while (stopper < stop) {
           if (relatedR && relatedR.data.artists[0]) {
             const idToAdd =
               relatedR.data.artists[
-                this.getRandomInt(relatedR.data.artists.length - 1)
+                that.getRandomInt(relatedR.data.artists.length - 1)
               ].id;
             if (addedArtists[idToAdd]) {
               stopper--;
@@ -128,7 +129,7 @@ export default class PlaylistCreator extends React.Component {
         "https://api.spotify.com/v1/artists/" +
         accumulator[i] +
         "/top-tracks?country=from_token";
-      const newResponse = await this.apiGet(url, token);
+      const newResponse = await that.apiGet(url, token);
       if (newResponse) {
         let index = 0;
         let idString = "";
@@ -140,7 +141,7 @@ export default class PlaylistCreator extends React.Component {
           }
           index++;
         }
-        const toAdd = await this.filterSongs(newResponse, token, idString);
+        const toAdd = await that.filterSongs(newResponse, token, idString);
         let p = 0;
         while (p < toAdd.length && filteredGet.length < 100) {
           filteredGet.push(toAdd[p]);
@@ -163,6 +164,7 @@ export default class PlaylistCreator extends React.Component {
   };
 
   activateCreate = async () => {
+    const that = this;
     const token = this.state.token
       ? this.state.token
       : await getData("accessToken");
@@ -171,6 +173,8 @@ export default class PlaylistCreator extends React.Component {
       "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
     const response = await this.apiGet(url, token);
 
+    this.setState({ creating: true });
+    
     if (response) {
       let stopper = 0;
       let addedArtists = {};
@@ -185,12 +189,13 @@ export default class PlaylistCreator extends React.Component {
         }
         stopper++;
       }
-      const filteredGet = await this.createPlaylist(artistIds, token);
+      const filteredGet = await that.createPlaylist(that, artistIds, token);
       await setData("playlistData", filteredGet);
-      this.props.navigation.navigate("PlaylistResults");
+      this.setState({ creating: false });
+      that.props.navigation.navigate("PlaylistResults");
     } else {
       console.log("ERROR: token expired");
-      this.setState({ userInfo: null, token: null, playlist: null });
+      that.setState({ userInfo: null, token: null, playlist: null });
     }
   };
 
@@ -239,9 +244,13 @@ export default class PlaylistCreator extends React.Component {
         <TouchableOpacity style={styles.button} onPress={this.activateFilter}>
           <Text style={styles.buttonText}>Filter Playlist</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={this.activateCreate}>
-          <Text style={styles.buttonText}>Spawn Playlist</Text>
-        </TouchableOpacity>
+
+        {this.state.creating
+        ? <Mytext text={"Creating Playlist..."} />
+        : <TouchableOpacity style={styles.button} onPress={this.activateCreate}>
+            <Text style={styles.buttonText}>Spawn Playlist</Text>
+          </TouchableOpacity>}
+
         <View style={localStyles.container}>
           <MytextTwo text={"Euphoria: " + this.state.euphoria} />
           <Slider
