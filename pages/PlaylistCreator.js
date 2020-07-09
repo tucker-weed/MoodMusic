@@ -46,7 +46,7 @@ export default class PlaylistCreator extends React.Component {
       "https://api.spotify.com/v1/audio-features/?ids=" + idString;
     const trackData = await that.apiGet(songsUrl, token);
     let j = 0;
-    const existenceCheck =
+    let existenceCheck =
       trackData["data"] &&
       trackData.data["audio_features"] &&
       trackData.data.audio_features[j] &&
@@ -80,6 +80,11 @@ export default class PlaylistCreator extends React.Component {
         }
       }
       j++;
+      existenceCheck =
+        trackData["data"] &&
+        trackData.data["audio_features"] &&
+        trackData.data.audio_features[j] &&
+        trackData.data.audio_features[j]["danceability"];
     }
     return filteredGet;
   };
@@ -298,75 +303,79 @@ export default class PlaylistCreator extends React.Component {
             >
               <Text style={styles.buttonText}>Back to User Playlists</Text>
             </TouchableOpacity>
-
-            <View style={localStyles.container}>
-              <MytextTwo text={"Euphoria: " + this.state.euphoria} />
-              <Slider
-                style={{ width: 300, height: 40 }}
-                minimumValue={0}
-                maximumValue={200}
-                minimumTrackTintColor="#FFFFFF"
-                maximumTrackTintColor="#000000"
-                onValueChange={val =>
-                  this.setState({ euphoria: Math.round(val) })
-                }
-              />
-            </View>
-            <View style={localStyles.container}>
-              <MytextTwo text={"Hype: " + this.state.hype} />
-              <Slider
-                style={{ width: 300, height: 40 }}
-                minimumValue={0}
-                maximumValue={700}
-                minimumTrackTintColor="#FFFFFF"
-                maximumTrackTintColor="#000000"
-                onValueChange={val => this.setState({ hype: Math.round(val) })}
-              />
-            </View>
-            <View style={localStyles.container}>
-              <Mytext text={"Popularity: " + this.state.popularity} />
-              <Slider
-                style={{ width: 300, height: 40 }}
-                minimumValue={0}
-                maximumValue={100}
-                minimumTrackTintColor="#FFFFFF"
-                maximumTrackTintColor="#000000"
-                onValueChange={val =>
-                  this.setState({ popularity: Math.round(val) })
-                }
-              />
-            </View>
-            <View style={localStyles.container}>
-              <Mytext text={"Tempo: " + this.state.tempo} />
-              <Slider
-                style={{ width: 300, height: 40 }}
-                minimumValue={0}
-                maximumValue={200}
-                minimumTrackTintColor="#FFFFFF"
-                maximumTrackTintColor="#000000"
-                onValueChange={val => this.setState({ tempo: Math.round(val) })}
-              />
-            </View>
-            <View style={localStyles.container}>
-              <Mytext text={"Key: " + this.state.key} />
-              <Switch
-                trackColor={{ false: "#767577", true: "#81b0ff" }}
-                thumbColor="#f4f3f4"
-                ios_backgroundColor="#3e3e3e"
-                onValueChange={this.toggleSwitch}
-                value={this.state.isEnabled}
-              />
-              <Slider
-                style={{ width: 300, height: 40 }}
-                minimumValue={0}
-                maximumValue={11}
-                minimumTrackTintColor="#FFFFFF"
-                maximumTrackTintColor="#000000"
-                onValueChange={val => this.setState({ key: Math.round(val) })}
-              />
-            </View>
           </View>
         )}
+
+        <View style={localStyles.container}>
+          <MytextTwo text={"Euphoria: " + this.state.euphoria} />
+          <Slider
+            style={{ width: 300, height: 40 }}
+            minimumValue={0}
+            maximumValue={200}
+            disabled={this.state.creating ? true : false}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="#000000"
+            onValueChange={val => this.setState({ euphoria: Math.round(val) })}
+          />
+        </View>
+        <View style={localStyles.container}>
+          <MytextTwo text={"Hype: " + this.state.hype} />
+          <Slider
+            style={{ width: 300, height: 40 }}
+            minimumValue={0}
+            maximumValue={700}
+            disabled={this.state.creating ? true : false}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="#000000"
+            onValueChange={val => this.setState({ hype: Math.round(val) })}
+          />
+        </View>
+        <View style={localStyles.container}>
+          <Mytext text={"Popularity: " + this.state.popularity} />
+          <Slider
+            style={{ width: 300, height: 40 }}
+            minimumValue={0}
+            maximumValue={100}
+            disabled={this.state.creating ? true : false}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="#000000"
+            onValueChange={val =>
+              this.setState({ popularity: Math.round(val) })
+            }
+          />
+        </View>
+        <View style={localStyles.container}>
+          <Mytext text={"Tempo: " + this.state.tempo} />
+          <Slider
+            style={{ width: 300, height: 40 }}
+            minimumValue={0}
+            maximumValue={200}
+            disabled={this.state.creating ? true : false}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="#000000"
+            onValueChange={val => this.setState({ tempo: Math.round(val) })}
+          />
+        </View>
+        <View style={localStyles.container}>
+          <Mytext text={"Key: " + this.state.key} />
+          <Switch
+            trackColor={{ false: "#767577", true: "#81b0ff" }}
+            thumbColor="#f4f3f4"
+            disabled={this.state.creating ? true : false}
+            ios_backgroundColor="#3e3e3e"
+            onValueChange={this.toggleSwitch}
+            value={this.state.isEnabled}
+          />
+          <Slider
+            style={{ width: 300, height: 40 }}
+            minimumValue={0}
+            maximumValue={11}
+            disabled={this.state.creating ? true : false}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="#000000"
+            onValueChange={val => this.setState({ key: Math.round(val) })}
+          />
+        </View>
       </View>
     );
   }
