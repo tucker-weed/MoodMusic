@@ -12,6 +12,10 @@ export const styles = StyleSheet.create({
     backgroundColor: "#2FD566",
     padding: 20
   },
+  skinnyButton: {
+    backgroundColor: "#2FD566",
+    padding: 10
+  },
   loadButton: {
     backgroundColor: "#2FD566",
     padding: 4,

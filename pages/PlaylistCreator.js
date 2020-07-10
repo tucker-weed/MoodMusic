@@ -21,7 +21,8 @@ export default class PlaylistCreator extends React.Component {
       euphoria: 0.0,
       hype: 0.0,
       key: 0,
-      popularity: 0
+      sPopularity: 0,
+      aPopularity: 0
     };
   }
 
@@ -40,62 +41,60 @@ export default class PlaylistCreator extends React.Component {
     });
   };
 
-  filterSongs = async (that, response, token, idString) => {
-    let filteredGet = [];
-    const songsUrl =
-      "https://api.spotify.com/v1/audio-features/?ids=" + idString;
-    const trackData = await that.apiGet(songsUrl, token);
-    let j = 0;
-    let existenceCheck =
-      trackData["data"] &&
-      trackData.data["audio_features"] &&
-      trackData.data.audio_features[j] &&
-      trackData.data.audio_features[j]["danceability"];
-    while (existenceCheck && j < trackData.data.audio_features.length) {
-      const euphoria =
-        trackData.data.audio_features[j].danceability * 100 +
-        trackData.data.audio_features[j].valence * 100;
-      const hype =
-        trackData.data.audio_features[j].tempo * 2 +
-        trackData.data.audio_features[j].energy * 150 +
-        trackData.data.audio_features[j].acousticness * 75 +
-        trackData.data.audio_features[j].danceability * 150;
-      if (
-        trackData.data.audio_features[j].tempo > that.state.tempo &&
-        euphoria > that.state.euphoria &&
-        hype > that.state.hype &&
-        (!that.state.isEnabled ||
-          trackData.data.audio_features[j].key == that.state.key)
-      ) {
-        if (
-          response.data["items"] &&
-          response.data.items[j].track.popularity > that.state.popularity
-        ) {
-          filteredGet.push(response.data.items[j]);
-        } else if (
-          !response.data["items"] &&
-          response.data.tracks[j].popularity > that.state.popularity
-        ) {
-          filteredGet.push(response.data.tracks[j]);
-        }
-      }
-      j++;
-      existenceCheck =
-        trackData["data"] &&
-        trackData.data["audio_features"] &&
-        trackData.data.audio_features[j] &&
-        trackData.data.audio_features[j]["danceability"];
-    }
-    return filteredGet;
-  };
-
   getRandomInt = max => {
     const min = 0;
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min;
   };
 
-  createPlaylist = async (that, artistIds, token) => {
+  filterSongs = async (that, response, token, idString) => {
+    let filteredGet = [];
+    const songsUrl =
+      "https://api.spotify.com/v1/audio-features/?ids=" + idString;
+    const trackData = await that.apiGet(songsUrl, token);
+    let existenceCheck = () => {
+      trackData["data"] &&
+      trackData.data["audio_features"] &&
+      trackData.data.audio_features[j] &&
+      trackData.data.audio_features[j]["danceability"]
+    }
+    let j = 0;
+
+    while (existenceCheck && j < trackData.data.audio_features.length) {
+      const features = trackData.data.audio_features;
+      const euphoria =
+        features[j].danceability * 100 + features[j].valence * 100;
+      const hype =
+        features[j].tempo * 2 +
+        features[j].energy * 150 +
+        features[j].acousticness * 75 +
+        features[j].danceability * 150;
+      if (
+        features[j].tempo > that.state.tempo &&
+        euphoria > that.state.euphoria &&
+        hype > that.state.hype &&
+        (!that.state.isEnabled || features[j].key == that.state.key)
+      ) {
+        if (
+          response.data["items"] &&
+          response.data.items[j].track.popularity > that.state.sPopularity
+        ) {
+          filteredGet.push(response.data.items[j]);
+        } else if (
+          response.data["tracks"] &&
+          response.data.tracks[j].popularity > that.state.sPopularity
+        ) {
+          filteredGet.push(response.data.tracks[j]);
+        }
+      }
+      j++;
+      existenceCheck = features[j] && features[j]["danceability"];
+    }
+
+    return filteredGet;
+  };
+
+  artistsToPlaylist = async (that, artistIds, token) => {
     let filteredGet = [];
     let accumulator = [];
     let addedArtists = {};
@@ -103,20 +102,20 @@ export default class PlaylistCreator extends React.Component {
 
     const getRelated = async (artistIds, stop) => {
       let accum = [];
-      let a = 0;
 
-      while (a < artistIds.length) {
-        const relatedUrl =
+      for (let a = 0; a < artistIds.length; a++) {
+        const url =
           "https://api.spotify.com/v1/artists/" +
           artistIds[a] +
           "/related-artists";
-        const relatedR = await that.apiGet(relatedUrl, token);
+        const response = await that.apiGet(url, token);
+
         let stopper = 0;
-        while (stopper < stop) {
-          if (relatedR && relatedR.data.artists[0]) {
+        while (stopper < stop && response.data.artists[0].popularity > that.state.aPopularity) {
+          if (response && response.data.artists[0]) {
             const idToAdd =
-              relatedR.data.artists[
-                that.getRandomInt(relatedR.data.artists.length - 1)
+              response.data.artists[
+                that.getRandomInt(response.data.artists.length - 1)
               ].id;
             if (addedArtists[idToAdd]) {
               stopper--;
@@ -127,68 +126,53 @@ export default class PlaylistCreator extends React.Component {
           }
           stopper++;
         }
-        a++;
       }
       return accum;
     };
 
     const timeout = deadline => {
-      return new Date().getTime() - start >= deadline;
+      return new Date().getTime() - start >= deadline * 1000;
     };
 
     const ids = await getRelated(artistIds, 1);
     accumulator.push(...ids);
     let i = 0;
 
-    while (
-      i < accumulator.length &&
-      filteredGet.length < 100 &&
-      !timeout(30000)
-    ) {
+    while (i < accumulator.length && filteredGet.length < 100 && !timeout(30)) {
       const url =
         "https://api.spotify.com/v1/artists/" +
         accumulator[i] +
         "/top-tracks?country=from_token";
-      const newResponse = await that.apiGet(url, token);
-      if (newResponse) {
-        let index = 0;
-        let idString = "";
-        while (index < newResponse.data.tracks.length) {
-          if (newResponse.data.tracks.length - index == 1) {
-            idString += newResponse.data.tracks[index].id;
-          } else {
-            idString += newResponse.data.tracks[index].id + ",";
-          }
-          index++;
-        }
-        const toAdd = await that.filterSongs(
-          that,
-          newResponse,
-          token,
-          idString
-        );
-        let p = 0;
-        while (p < toAdd.length && filteredGet.length < 100) {
-          filteredGet.push(toAdd[p]);
-          p++;
+      const response = await that.apiGet(url, token);
+      const responseTracks = response.data.tracks;
+      let idString = "";
+
+      for (let index = 0; index < responseTracks.length; index++) {
+        if (responseTracks.length - index == 1) {
+          idString += responseTracks[index].id;
+        } else {
+          idString += responseTracks[index].id + ",";
         }
       }
 
+      const toAdd = await that.filterSongs(that, response, token, idString);
+      let p = 0;
+
+      while (p < toAdd.length && filteredGet.length < 100) {
+        filteredGet.push(toAdd[p]);
+        p++;
+      }
       if (
         i == accumulator.length - 1 &&
         filteredGet.length < 100 &&
-        !timeout(30000)
+        !timeout(30)
       ) {
         const ids = await getRelated(accumulator, 1);
-        let m = 0;
-        while (m < ids.length) {
-          accumulator.push(ids[m]);
-          m++;
-        }
+        accumulator.push(...ids);
       }
-
       i++;
     }
+
     return filteredGet;
   };
 
@@ -198,34 +182,27 @@ export default class PlaylistCreator extends React.Component {
       ? this.state.token
       : await getData("accessToken");
     const playlistId = await getData("playlistId");
-    const url =
-      "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
+    const url = "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
     const response = await this.apiGet(url, token);
-
+    const items = response.data.items;
+    let addedArtists = {};
+    let artistIds = [];
     this.setState({ creating: true });
 
-    if (response) {
-      let stopper = 0;
-      let addedArtists = {};
-      let artistIds = [];
-      while (stopper < response.data.items.length) {
-        if (response.data.items[stopper].track.artists[0]) {
-          const idToAdd = response.data.items[stopper].track.artists[0].id;
-          if (!addedArtists[idToAdd]) {
-            artistIds.push(idToAdd);
-            addedArtists[idToAdd] = true;
-          }
+    for (let s = 0; s < items.length; s++) {
+      if (items[s].track.artists[0]) {
+        const idToAdd = items[s].track.artists[0].id;
+        if (!addedArtists[idToAdd]) {
+          artistIds.push(idToAdd);
+          addedArtists[idToAdd] = true;
         }
-        stopper++;
       }
-      const filteredGet = await that.createPlaylist(that, artistIds, token);
-      await setData("playlistData", filteredGet);
-      this.setState({ creating: false });
-      that.props.navigation.navigate("PlaylistResults");
-    } else {
-      console.log("ERROR: token expired");
-      that.setState({ userInfo: null, token: null, playlist: null });
     }
+
+    const filteredGet = await that.artistsToPlaylist(that, artistIds, token);
+    await setData("playlistData", filteredGet);
+    that.props.navigation.navigate("PlaylistResults");
+    this.setState({ creating: false });
   };
 
   activateFilter = async () => {
@@ -237,33 +214,25 @@ export default class PlaylistCreator extends React.Component {
     const url =
       "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
     const response = await this.apiGet(url, token);
-
+    const items = response.data.items;
+    let idString = "";
     this.setState({ creating: true });
 
-    if (response) {
-      let index = 0;
-      let idString = "";
-      while (index < response.data.items.length) {
-        if (response.data.items.length - index == 1) {
-          idString += response.data.items[index].track.id;
+    for (let index = 0; index < items.length; index++) {
+      const responseTwo = await this.apiGet(items[index].track.artists[0].href, token);
+      if (responseTwo.data.popularity > that.state.aPopularity) {
+        if (items.length - index == 1) {
+          idString += items[index].track.id;
         } else {
-          idString += response.data.items[index].track.id + ",";
+          idString += items[index].track.id + ",";
         }
-        index++;
       }
-      const filteredGet = await that.filterSongs(
-        that,
-        response,
-        token,
-        idString
-      );
-      await setData("playlistData", filteredGet);
-      this.setState({ creating: false });
-      that.props.navigation.navigate("PlaylistResults");
-    } else {
-      console.log("ERROR: token expired");
-      that.setState({ userInfo: null, token: null, playlist: null });
     }
+    const filteredGet = await that.filterSongs(that, response, token, idString);
+
+    await setData("playlistData", filteredGet);
+    that.props.navigation.navigate("PlaylistResults");
+    this.setState({ creating: false });
   };
 
   toggleSwitch = () => {
@@ -284,19 +253,19 @@ export default class PlaylistCreator extends React.Component {
         ) : (
           <View>
             <TouchableOpacity
-              style={styles.button}
+              style={styles.skinnyButton}
               onPress={this.activateFilter}
             >
               <Text style={styles.buttonText}>Filter Playlist</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.button}
+              style={styles.skinnyButton}
               onPress={this.activateCreate}
             >
               <Text style={styles.buttonText}>Spawn Playlist</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.button}
+              style={styles.skinnyButton}
               onPress={() =>
                 this.props.navigation.dispatch(StackActions.replace("MoodHome"))
               }
@@ -331,7 +300,7 @@ export default class PlaylistCreator extends React.Component {
           />
         </View>
         <View style={localStyles.container}>
-          <Mytext text={"Popularity: " + this.state.popularity} />
+          <Mytext text={"Song Popularity: " + this.state.sPopularity} />
           <Slider
             style={{ width: 300, height: 40 }}
             minimumValue={0}
@@ -340,7 +309,21 @@ export default class PlaylistCreator extends React.Component {
             minimumTrackTintColor="#FFFFFF"
             maximumTrackTintColor="#000000"
             onValueChange={val =>
-              this.setState({ popularity: Math.round(val) })
+              this.setState({ sPopularity: Math.round(val) })
+            }
+          />
+        </View>
+        <View style={localStyles.container}>
+          <Mytext text={"Artist Popularity: " + this.state.aPopularity} />
+          <Slider
+            style={{ width: 300, height: 40 }}
+            minimumValue={0}
+            maximumValue={100}
+            disabled={this.state.creating ? true : false}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="#000000"
+            onValueChange={val =>
+              this.setState({ aPopularity: Math.round(val) })
             }
           />
         </View>
@@ -387,7 +370,7 @@ const localStyles = StyleSheet.create({
     backgroundColor: "#2FD566",
     color: "#ffffff",
     padding: 0,
-    marginTop: 10,
+    marginTop: 3,
     marginLeft: 35,
     marginRight: 35
   }
