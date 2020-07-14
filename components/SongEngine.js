@@ -74,94 +74,54 @@ export default class SongEngine {
     return songsToReturn;
   };
 
-  artistsToPlaylist = async (that, artistIds, token) => {
-    let songsToReturn = [];
-    let accumulator = [];
-    let addedArtists = {};
-    const start = new Date().getTime();
+  getSeededRecs = async (artistIds, token) => {
+    const idString = artistIds.join(",");
+    const url =
+      "https://api.spotify.com/v1/recommendations?limit=100&seed_artists=" +
+      idString +
+      "&market=from_token";
+    const response = await this.apiGet(url, token);
+    const tracks = response.data.tracks;
+    const trackIds = [];
 
-    const timeout = deadline => {
-      return new Date().getTime() - start >= deadline * 1000;
-    };
-
-    const getRelated = async (artistIds, stop) => {
-      let accum = [];
-
-      for (let a = 0; a < artistIds.length; a++) {
-        const url =
-          "https://api.spotify.com/v1/artists/" +
-          artistIds[a] +
-          "/related-artists";
-        const response = await that.apiGet(url, token);
-
-        let stopper = 0;
-        while (stopper < stop && !timeout(30)) {
-          if (
-            response &&
-            response.data.artists[0] &&
-            (!that.state.lookArtists ||
-              response.data.artists[0].popularity > that.state.aPopularity)
-          ) {
-            const idToAdd =
-              response.data.artists[
-                that.getRandomInt(response.data.artists.length - 1)
-              ].id;
-            if (addedArtists[idToAdd]) {
-              stopper--;
-            } else {
-              accum.push(idToAdd);
-              addedArtists[idToAdd] = true;
-            }
-          }
-          stopper++;
-        }
-      }
-      return accum;
-    };
-
-    const ids = await getRelated(artistIds, 1);
-    accumulator.push(...ids);
-    let i = 0;
-
-    while (
-      i < accumulator.length &&
-      songsToReturn.length < 100 &&
-      !timeout(30)
-    ) {
-      const url =
-        "https://api.spotify.com/v1/artists/" +
-        accumulator[i] +
-        "/top-tracks?country=from_token";
-      const response = await that.apiGet(url, token);
-      const responseTracks = response.data.tracks;
-      let idString = "";
-
-      for (let index = 0; index < responseTracks.length; index++) {
-        if (responseTracks.length - index == 1) {
-          idString += responseTracks[index].id;
-        } else {
-          idString += responseTracks[index].id + ",";
-        }
-      }
-
-      const toAdd = await that.filterSongs(that, response, token, idString);
-      let p = 0;
-
-      while (p < toAdd.length && songsToReturn.length < 100) {
-        songsToReturn.push(toAdd[p]);
-        p++;
-      }
-      if (
-        i == accumulator.length - 1 &&
-        songsToReturn.length < 100 &&
-        !timeout(30)
-      ) {
-        const ids = await getRelated(accumulator, 1);
-        accumulator.push(...ids);
-      }
-      i++;
+    for (let n = 0; n < tracks.length; n++) {
+      trackIds.push(tracks[n].id);
     }
 
+    return [trackIds, response];
+  };
+
+  artistsToPlaylist = async (that, artistIds, token) => {
+    const songsToReturn = [];
+    const addedArtists = {};
+
+    while (songsToReturn.length < 100) {
+      const idAccum = [];
+      let stopper = 0;
+      while (stopper < 5) {
+        const idToAdd = artistIds[this.getRandomInt(artistIds.length - 1)];
+        if (addedArtists[idToAdd]) {
+          stopper--;
+        } else {
+          idAccum.push(idToAdd);
+          addedArtists[idToAdd] = true;
+        }
+        stopper++;
+      }
+
+      const songsAndResponse = await this.getSeededRecs(idAccum, token);
+      const filtered = await this.filterSongs(
+        that,
+        songsAndResponse[1],
+        token,
+        songsAndResponse[0]
+      );
+      let p = 0;
+      while (p < filtered.length && songsToReturn.length < 100) {
+        songsToReturn.push(filtered[p]);
+        p++;
+      }
+    }
     return songsToReturn;
   };
 

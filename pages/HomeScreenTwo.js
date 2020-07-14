@@ -44,8 +44,8 @@ export default class HomeScreenTwo extends React.Component {
     try {
       await this.apiGet("https://api.spotify.com/v1/me", token);
       this.props.navigation.dispatch(StackActions.replace("MoodHome"));
-    } catch (e) {
-      console.log(e);
+    } catch (_) {
+      console.log("Token expired. Navigating to authentication.");
       this.props.navigation.dispatch(StackActions.replace("SpotifyLogin"));
     }
   };
