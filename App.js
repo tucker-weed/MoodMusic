@@ -26,8 +26,8 @@ function MainStackNavigator() {
           component={HomeScreen}
           options={{
             title: "Mood Music",
-            headerStyle: { backgroundColor: "white" },
-            headerTintColor: "black"
+            headerStyle: { backgroundColor: "#008080" },
+            headerTintColor: "white"
           }}
         />
         <Stack.Screen
@@ -35,8 +35,8 @@ function MainStackNavigator() {
           component={HomeScreenTwo}
           options={{
             title: "Mood Music",
-            headerStyle: { backgroundColor: "white" },
-            headerTintColor: "black"
+            headerStyle: { backgroundColor: "#008080" },
+            headerTintColor: "white"
           }}
         />
         <Stack.Screen
@@ -44,8 +44,8 @@ function MainStackNavigator() {
           component={ViewAllUser}
           options={{
             title: "User Information",
-            headerStyle: { backgroundColor: "white" },
-            headerTintColor: "black"
+            headerStyle: { backgroundColor: "#008080" },
+            headerTintColor: "white"
           }}
         />
         <Stack.Screen
@@ -53,8 +53,8 @@ function MainStackNavigator() {
           component={UpdateUser}
           options={{
             title: "Update User",
-            headerStyle: { backgroundColor: "white" },
-            headerTintColor: "black"
+            headerStyle: { backgroundColor: "#008080" },
+            headerTintColor: "white"
           }}
         />
         <Stack.Screen
@@ -62,8 +62,8 @@ function MainStackNavigator() {
           component={RegisterUser}
           options={{
             title: "Register User",
-            headerStyle: { backgroundColor: "white" },
-            headerTintColor: "black"
+            headerStyle: { backgroundColor: "#008080" },
+            headerTintColor: "white"
           }}
         />
         <Stack.Screen
@@ -71,8 +71,8 @@ function MainStackNavigator() {
           component={DeleteUser}
           options={{
             title: "Delete User",
-            headerStyle: { backgroundColor: "white" },
-            headerTintColor: "black"
+            headerStyle: { backgroundColor: "#008080" },
+            headerTintColor: "white"
           }}
         />
         <Stack.Screen
@@ -80,8 +80,8 @@ function MainStackNavigator() {
           component={LoginPage}
           options={{
             title: "Login Page",
-            headerStyle: { backgroundColor: "white" },
-            headerTintColor: "black"
+            headerStyle: { backgroundColor: "#008080" },
+            headerTintColor: "white"
           }}
         />
         <Stack.Screen
@@ -89,8 +89,8 @@ function MainStackNavigator() {
           component={SpotifyLogin}
           options={{
             title: "Spotify Login",
-            headerStyle: { backgroundColor: "white" },
-            headerTintColor: "black"
+            headerStyle: { backgroundColor: "#008080" },
+            headerTintColor: "white"
           }}
         />
         <Stack.Screen
@@ -98,8 +98,8 @@ function MainStackNavigator() {
           component={MoodHome}
           options={{
             title: "User Playlists",
-            headerStyle: { backgroundColor: "white" },
-            headerTintColor: "black"
+            headerStyle: { backgroundColor: "#008080" },
+            headerTintColor: "white"
           }}
         />
         <Stack.Screen
@@ -107,8 +107,8 @@ function MainStackNavigator() {
           component={PlaylistCreator}
           options={{
             title: "Playlist Mixer",
-            headerStyle: { backgroundColor: "white" },
-            headerTintColor: "black"
+            headerStyle: { backgroundColor: "#008080" },
+            headerTintColor: "white"
           }}
         />
         <Stack.Screen
@@ -116,8 +116,8 @@ function MainStackNavigator() {
           component={PlaylistResults}
           options={{
             title: "Generated Playlist",
-            headerStyle: { backgroundColor: "white" },
-            headerTintColor: "black"
+            headerStyle: { backgroundColor: "#008080" },
+            headerTintColor: "white"
           }}
         />
         <Stack.Screen
@@ -125,8 +125,8 @@ function MainStackNavigator() {
           component={SongPlayer}
           options={{
             title: "Player",
-            headerStyle: { backgroundColor: "white" },
-            headerTintColor: "black"
+            headerStyle: { backgroundColor: "#008080" },
+            headerTintColor: "white"
           }}
         />
       </Stack.Navigator>
