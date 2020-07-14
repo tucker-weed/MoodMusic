@@ -2,8 +2,8 @@ import axios from "axios";
 import { setData, getData } from "../LocalStorage.js";
 
 export default class SongEngine {
-  constructor() {
-    this.state;
+  constructor(stats) {
+    this.state = stats;
   }
 
   /**
@@ -165,7 +165,7 @@ export default class SongEngine {
     return songsToReturn;
   };
 
-  activateAlgorithm = async which => {
+  crawlAPI = async which => {
     const that = this;
     const token = this.state.token
       ? this.state.token
@@ -227,10 +227,5 @@ export default class SongEngine {
     } else {
       console.error("Argument 'which' is restricted to filter or create");
     }
-  };
-
-  crawlAPI = async which => {
-    this.state = await getData("Stats");
-    await this.activateAlgorithm(which);
   };
 }
