@@ -4,7 +4,8 @@ import { StackActions } from "@react-navigation/native";
 import Slider from "@react-native-community/slider";
 
 import { Mytext, MytextTwo } from "../components/Mytext.js";
-import SongEngine from "../components/SongEngine.js";
+import SongEngine from "../SongEngine.js";
+import { setData } from "../LocalStorage.js";
 import { styles } from "../Styles.js";
 
 export default class PlaylistCreator extends React.Component {
@@ -37,8 +38,9 @@ export default class PlaylistCreator extends React.Component {
   activateAlgorithm = async which => {
     const that = this;
     this.setState({ creating: true });
-    const engine = new SongEngine(that.state);
-    await engine.crawlAPI(which);
+    await setData("Stats", this.state);
+    const songs = await new SongEngine(this.state).algorithm(which);
+    await setData("playlistData", songs);
     that.props.navigation.navigate("PlaylistResults");
     this.setState({ creating: false });
   };

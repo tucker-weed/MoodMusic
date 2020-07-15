@@ -1,9 +1,11 @@
 import React from "react";
 import { View, Image, Alert } from "react-native";
+import { ButtonOne } from "../components/MyButtons.js";
 import axios from "axios";
-import { getData } from "../LocalStorage.js";
+import { setData, getData } from "../LocalStorage.js";
 import { PlayerButton } from "../components/MyButtons.js";
 import { Mytext } from "../components/Mytext.js";
+import SongEngine from "../SongEngine.js";
 
 export default class SongPlayer extends React.Component {
   constructor(props) {
@@ -11,9 +13,31 @@ export default class SongPlayer extends React.Component {
     this.state = {
       navigated: false,
       playing: false,
-      current: null
+      current: null,
+      songQueue: null,
+      engine: null,
+      likeDislikeSpread: 0
     };
   }
+
+  dislike = async () => {
+    if (this.state.likeDislikeSpread < -5) {
+      const playlist = await new SongEngine(await getData("Stats")).algorithm(
+        "create"
+      );
+      await setData("playlistData", playlist);
+      Alert.alert("Downvoted Song: playlist reset with new seeds");
+      this.setState({ likeDislikeSpread: 0 });
+    } else {
+      Alert.alert("Downvoted Song");
+      this.setState({ likeDislikeSpread: this.state.likeDislikeSpread - 1 });
+    }
+  };
+
+  like = () => {
+    Alert.alert("Upvoted Song");
+    this.setState({ likeDislikeSpread: this.state.likeDislikeSpread + 1 });
+  };
 
   apiGetTrackImage = async token => {
     let img = ["", ""];
@@ -101,10 +125,16 @@ export default class SongPlayer extends React.Component {
     const token = await getData("accessToken");
     try {
       await this.apiPost("https://api.spotify.com/v1/me/player/next", token);
-      await this.apiGetTrackImage(token);
-      await this.apiGetTrackImage(token);
-      this.apiGetTrackImage(token).then(async img => {
-        this.setState({ playing: true, current: img[0], songName: img[1] });
+      let urlTracker = this.state.current;
+      let trackimg;
+      while (urlTracker === this.state.current) {
+        trackimg = await this.apiGetTrackImage(token);
+        urlTracker = trackimg[0];
+      }
+      this.setState({
+        playing: true,
+        current: trackimg[0],
+        songName: trackimg[1]
       });
     } catch (e) {
       Alert.alert("Please connect a spotify device");
@@ -119,10 +149,16 @@ export default class SongPlayer extends React.Component {
         "https://api.spotify.com/v1/me/player/previous",
         token
       );
-      await this.apiGetTrackImage(token);
-      await this.apiGetTrackImage(token);
-      this.apiGetTrackImage(token).then(async img => {
-        this.setState({ playing: true, current: img[0], songName: img[1] });
+      let urlTracker = this.state.current;
+      let trackimg;
+      while (urlTracker === this.state.current) {
+        trackimg = await this.apiGetTrackImage(token);
+        urlTracker = trackimg[0];
+      }
+      this.setState({
+        playing: false,
+        current: trackimg[0],
+        songName: trackimg[1]
       });
     } catch (e) {
       Alert.alert("Please connect a spotify device");
@@ -130,7 +166,7 @@ export default class SongPlayer extends React.Component {
     }
   };
 
-  activatePlayHelper = async (token, id) => {
+  activatePlayHelper = async token => {
     try {
       const img = await this.apiGetTrackImage(token);
       this.setState({
@@ -177,11 +213,9 @@ export default class SongPlayer extends React.Component {
             "https://api.spotify.com/v1/me/player/play",
             token
           );
-          await this.activatePlayHelper(token, id);
-          await this.activatePlayHelper(token, id);
+          await this.activatePlayHelper(token);
         } catch (_) {
-          await this.activatePlayHelper(token, id);
-          await this.activatePlayHelper(token, id);
+          await this.activatePlayHelper(token);
         }
       }
     } catch (e) {
@@ -214,9 +248,11 @@ export default class SongPlayer extends React.Component {
         }}
       >
         <Mytext text={"Song Navigation"} />
+        <ButtonOne title="LIKE" customClick={this.like} />
+        <ButtonOne title="DISLIKE" customClick={this.dislike} />
         <View
           style={{
-            flex: 0.085,
+            flex: 0.1,
             backgroundColor: "black",
             flexDirection: "row"
           }}

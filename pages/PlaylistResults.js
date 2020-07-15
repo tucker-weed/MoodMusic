@@ -72,6 +72,7 @@ export default class PlaylistResults extends React.Component {
   };
 
   nav = () => {
+    this.setState({ userInfo: null, token: null, playlist: null });
     this.props.navigation.navigate("SongPlayer");
   };
 
