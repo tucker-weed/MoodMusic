@@ -67,11 +67,11 @@ export default class SongPlayer extends React.Component {
       }
       await setData("playlistData", playlist);
       await this.apiPut(url, token, ids);
-      this.setState({ trackIds: [], likes: 0 });
+      this.setState({ likes: 0 });
     } else {
       Alert.alert("Upvoted Song");
       const newIds = that.state.trackIds;
-      newIds.push(that.state.trackPlaying);
+      newIds.unshift(that.state.trackPlaying);
       this.setState({ trackIds: newIds, likes: that.state.likes + 1 });
     }
   };
@@ -273,11 +273,11 @@ export default class SongPlayer extends React.Component {
         "https://api.spotify.com/v1/me/player/pause",
         token
       );
-      this.setState({ 
-        playing: false, 
-        current: img[0], 
-        songName: img[1], 
-        trackPlaying: img[2] 
+      this.setState({
+        playing: false,
+        current: img[0],
+        songName: img[1],
+        trackPlaying: img[2]
       });
     } catch (e) {
       Alert.alert("Please connect a spotify device");

@@ -103,13 +103,18 @@ export default class SongEngine {
    *
    * @param artistIds - an array of artist ID strings
    * @param token - user authentication token, a string
+   * @param TorA - a boolean representing true for tracks and false for artists
    * @returns - a two element array, with index 0 being an array of track ID
    *            strings, and with index 1 being Track Info json
    */
   _getSeededRecs = async (artistIds, token, TorA) => {
     const idString = artistIds.join(",");
-    const url =
-      `https://api.spotify.com/v1/recommendations?limit=50&seed_artists=${idString}&market=from_token`;
+    let url;
+    if (TorA) {
+      url = `https://api.spotify.com/v1/recommendations?limit=50&seed_tracks=${idString}&market=from_token`;
+    } else {
+      url = `https://api.spotify.com/v1/recommendations?limit=50&seed_artists=${idString}&market=from_token`;
+    }
     const response = await this._apiGet(url, token);
     const tracks = response.data.tracks;
     const trackIds = [];
@@ -153,12 +158,20 @@ export default class SongEngine {
       }
 
       let songsAndResponse;
-      if (TorA === "tracks" && addedArtists.length > 0 && addedArtists.length <= 5) {
+      if (
+        TorA === "tracks" &&
+        addedArtists.length > 0 &&
+        addedArtists.length <= 5
+      ) {
         songsAndResponse =
-          idAccum.length > 0 ? await this._getSeededRecs(idAccum, token, TorA) : null;
+          idAccum.length > 0
+            ? await this._getSeededRecs(idAccum, token, true)
+            : null;
       } else {
         songsAndResponse =
-          idAccum.length > 0 ? await this._getSeededRecs(idAccum, token, TorA) : null;
+          idAccum.length > 0
+            ? await this._getSeededRecs(idAccum, token, false)
+            : null;
       }
       if (songsAndResponse && songsAndResponse[0].length > 0) {
         filtered = await this._filterSongs(
@@ -172,13 +185,14 @@ export default class SongEngine {
         songsToReturn.push(...replace);
       }
     }
-    return songsToReturn.slice(0,100);
+    return songsToReturn.slice(0, 100);
   };
 
   /**
    * Main entry point for interaction with the spotify api
    *
-   * @param which - a string being algorithm options
+   * @param which - a string, either 'filter' or 'create'
+   * @param TorA - a string, either 'tracks' or 'artists'
    * @returns - an array of Track Info Json
    */
   algorithm = async (which, TorA) => {
