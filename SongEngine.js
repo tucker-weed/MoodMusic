@@ -8,7 +8,6 @@ import { getData } from "./LocalStorage.js";
  */
 export default class SongEngine {
   constructor(stats) {
-    this.addedArtists = {};
     this.state = stats;
   }
 
@@ -107,12 +106,10 @@ export default class SongEngine {
    * @returns - a two element array, with index 0 being an array of track ID
    *            strings, and with index 1 being Track Info json
    */
-  _getSeededRecs = async (artistIds, token) => {
+  _getSeededRecs = async (artistIds, token, TorA) => {
     const idString = artistIds.join(",");
     const url =
-      "https://api.spotify.com/v1/recommendations?limit=50&seed_artists=" +
-      idString +
-      "&market=from_token";
+      `https://api.spotify.com/v1/recommendations?limit=50&seed_artists=${idString}&market=from_token`;
     const response = await this._apiGet(url, token);
     const tracks = response.data.tracks;
     const trackIds = [];
@@ -134,16 +131,11 @@ export default class SongEngine {
    * @param artistIds - an array of artist ID strings
    * @param token - user authentication token, a string
    */
-  _artistsToPlaylist = async (artistIds, token) => {
+  _artistsToPlaylist = async (artistIds, token, TorA) => {
     const songsToReturn = [];
     const addedArtists = {};
     let filtered = [];
     const start = new Date().getTime();
-
-    if (artistIds.length < 5) {
-      this.addedArtists = {};
-      return this.algorithm("create");
-    }
 
     while (filtered && songsToReturn.length < 100 && !this.timeout(start, 7)) {
       const idAccum = [];
@@ -151,7 +143,6 @@ export default class SongEngine {
       let stop = artistIds.length > 5 ? 5 : artistIds.length;
       while (stopper < stop) {
         const idToAdd = artistIds[stopper];
-        this.addedArtists[idToAdd] = true;
         if (addedArtists[idToAdd] && stop + 1 < artistIds.length) {
           stop++;
         } else if (!addedArtists[idToAdd]) {
@@ -161,8 +152,14 @@ export default class SongEngine {
         stopper++;
       }
 
-      const songsAndResponse =
-        idAccum.length > 0 ? await this._getSeededRecs(idAccum, token) : null;
+      let songsAndResponse;
+      if (TorA === "tracks" && addedArtists.length > 0 && addedArtists.length <= 5) {
+        songsAndResponse =
+          idAccum.length > 0 ? await this._getSeededRecs(idAccum, token, TorA) : null;
+      } else {
+        songsAndResponse =
+          idAccum.length > 0 ? await this._getSeededRecs(idAccum, token, TorA) : null;
+      }
       if (songsAndResponse && songsAndResponse[0].length > 0) {
         filtered = await this._filterSongs(
           start,
@@ -175,7 +172,7 @@ export default class SongEngine {
         songsToReturn.push(...replace);
       }
     }
-    return songsToReturn;
+    return songsToReturn.slice(0,100);
   };
 
   /**
@@ -184,8 +181,10 @@ export default class SongEngine {
    * @param which - a string being algorithm options
    * @returns - an array of Track Info Json
    */
-  algorithm = async which => {
+  algorithm = async (which, TorA) => {
     let refinedTracks;
+    const start = new Date().getTime();
+    const trackSeeds = await getData("TrackSeeds");
     const addedArtists = {};
     const token = this.state.token
       ? this.state.token
@@ -200,9 +199,6 @@ export default class SongEngine {
     for (let s = 0; s < items.length; s++) {
       if (items[s].track.artists[0]) {
         const idToAdd = items[s].track.artists[0].id;
-        if (!this.addedArtists[idToAdd]) {
-          this.addedArtists[idToAdd] = true;
-        }
         if (addedArtists[idToAdd]) {
           addedArtists[idToAdd].push(items[s].track.id);
         } else {
@@ -236,9 +232,16 @@ export default class SongEngine {
           console.log(e);
         }
       }
-      refinedTracks = await this._filterSongs(response, token, idString);
+      refinedTracks = await this._filterSongs(start, response, token, idString);
     } else if (which === "create") {
-      refinedTracks = await this._artistsToPlaylist(artistIds, token);
+      if (TorA === "tracks") {
+        artistIds.unshift(...trackSeeds);
+        refinedTracks = await this._artistsToPlaylist(artistIds, token, TorA);
+      } else if (TorA === "artists") {
+        refinedTracks = await this._artistsToPlaylist(artistIds, token, TorA);
+      } else {
+        console.error("Argument 'TorA' is restricted to 'tracks' or 'artists'");
+      }
     } else {
       console.error("Argument 'which' is restricted to 'filter' or 'create'");
     }

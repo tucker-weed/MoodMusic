@@ -56,7 +56,7 @@ export default class PlaylistResults extends React.Component {
     const playlist = await getData("playlistData");
     const playlistId = await getData("mmPlaylist");
 
-    if (playlistId) {
+    if (playlistId && playlist) {
       const url =
         "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
       const ids = [];
