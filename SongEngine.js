@@ -42,12 +42,13 @@ export default class SongEngine {
   /**
    * Takes a string of track IDs and filters the tracks based on state values
    *
+   * @param start - start time of the algorithm
    * @param response - a reference to an api response of Track Info json
    * @param token - user authentication token, a string
    * @param idString - a string composed of track IDs
    * @returns - an array of Track Information json
    */
-  _filterSongs = async (response, token, idString) => {
+  _filterSongs = async (start, response, token, idString) => {
     let songsToReturn = [];
     const songsUrl =
       "https://api.spotify.com/v1/audio-features/?ids=" + idString;
@@ -61,7 +62,11 @@ export default class SongEngine {
     let j = 0;
     let features;
 
-    while (existenceCheck && j < trackData.data.audio_features.length) {
+    while (
+      existenceCheck &&
+      j < trackData.data.audio_features.length &&
+      !this.timeout(start, 7)
+    ) {
       features = trackData.data.audio_features;
       const euphoria =
         features[j].danceability * 100 + features[j].valence * 100;
@@ -91,7 +96,6 @@ export default class SongEngine {
       j++;
       existenceCheck = features[j] && features[j]["danceability"];
     }
-
     return songsToReturn;
   };
 
@@ -120,6 +124,10 @@ export default class SongEngine {
     return [trackIds, response];
   };
 
+  timeout = (start, deadline) => {
+    return new Date().getTime() - start >= deadline * 1000;
+  };
+
   /**
    * Takes an array of Artist json and produces 100 track IDs
    *
@@ -129,38 +137,42 @@ export default class SongEngine {
   _artistsToPlaylist = async (artistIds, token) => {
     const songsToReturn = [];
     const addedArtists = {};
+    let filtered = [];
+    const start = new Date().getTime();
 
     if (artistIds.length < 5) {
-      return this.alogirthm("create");
+      this.addedArtists = {};
+      return this.algorithm("create");
     }
 
-    while (songsToReturn.length < 100) {
+    while (filtered && songsToReturn.length < 100 && !this.timeout(start, 7)) {
       const idAccum = [];
       let stopper = 0;
-      while (stopper < 5) {
-        const idToAdd = artistIds[this._getRandomInt(artistIds.length - 1)];
-        if (!this.addedArtists[idToAdd]) {
-          this.addedArtists[idToAdd] = true;
-        }
-        if (addedArtists[idToAdd]) {
-          stopper--;
-        } else {
+      let stop = artistIds.length > 5 ? 5 : artistIds.length;
+      while (stopper < stop) {
+        const idToAdd = artistIds[stopper];
+        this.addedArtists[idToAdd] = true;
+        if (addedArtists[idToAdd] && stop + 1 < artistIds.length) {
+          stop++;
+        } else if (!addedArtists[idToAdd]) {
           idAccum.push(idToAdd);
           addedArtists[idToAdd] = true;
         }
         stopper++;
       }
 
-      const songsAndResponse = await this._getSeededRecs(idAccum, token);
-      const filtered = await this._filterSongs(
-        songsAndResponse[1],
-        token,
-        songsAndResponse[0]
-      );
-      let p = 0;
-      while (p < filtered.length && songsToReturn.length < 100) {
-        songsToReturn.push(filtered[p]);
-        p++;
+      const songsAndResponse =
+        idAccum.length > 0 ? await this._getSeededRecs(idAccum, token) : null;
+      if (songsAndResponse && songsAndResponse[0].length > 0) {
+        filtered = await this._filterSongs(
+          start,
+          songsAndResponse[1],
+          token,
+          songsAndResponse[0]
+        );
+        const replace =
+          filtered.length > 100 ? filtered.slice(0, 100) : filtered;
+        songsToReturn.push(...replace);
       }
     }
     return songsToReturn;
