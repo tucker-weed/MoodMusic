@@ -42,9 +42,8 @@ export default class SongPlayer extends React.Component {
   };
 
   like = async () => {
-    const that = this;
-    if (this.state.artistPlaying) {
-      Alert.alert("Upvoted Song");
+    if (this.state.artistPlaying && this.state.likes >= 4) {
+      Alert.alert("Upvoted Song - Updating Seed...");
       const replace = this.state.artistLikes;
       replace.unshift(this.state.artistPlaying);
       await setData("ArtistSeeds", replace);
@@ -67,7 +66,12 @@ export default class SongPlayer extends React.Component {
       }
       await setData("playlistData", playlist);
       await this.apiPut(url, token, ids);
-      this.setState({ likes: that.state.likes + 1 });
+      this.setState({ artistLikes: replace, likes: 0 });
+    } else if (this.state.artistPlaying) {
+      Alert.alert("Upvoted Song");
+      const replace = this.state.artistLikes;
+      replace.unshift(this.state.artistPlaying);
+      this.setState({ artistLikes: replace, likes: this.state.likes + 1 });
     }
   };
 
