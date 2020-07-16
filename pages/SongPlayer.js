@@ -17,8 +17,8 @@ export default class SongPlayer extends React.Component {
       songQueue: null,
       engine: null,
       likes: 0,
-      trackPlaying: null,
-      trackIds: []
+      artistPlaying: null,
+      artistLikes: []
     };
   }
 
@@ -43,13 +43,15 @@ export default class SongPlayer extends React.Component {
 
   like = async () => {
     const that = this;
-    if (this.state.trackPlaying) {
+    if (this.state.artistPlaying) {
       Alert.alert("Upvoted Song");
-      await setData("TrackSeed", this.state.trackPlaying);
+      const replace = this.state.artistLikes;
+      replace.unshift(this.state.artistPlaying);
+      await setData("ArtistSeeds", replace);
 
       const playlist = await new SongEngine(await getData("Stats")).algorithm(
         "create",
-        "tracks"
+        true
       );
       const playlistId = await getData("mmPlaylist");
       const token = await getData("accessToken");
@@ -85,7 +87,7 @@ export default class SongPlayer extends React.Component {
     ) {
       img[0] = response.data.item.album.images[0].url;
       img[1] = response.data.item.name;
-      img[2] = response.data.item.id;
+      img[2] = response.data.item.album.artists[0].id;
     }
     return img;
   };
@@ -166,7 +168,7 @@ export default class SongPlayer extends React.Component {
         playing: true,
         current: trackimg[0],
         songName: trackimg[1],
-        trackPlaying: trackimg[2]
+        artistPlaying: trackimg[2]
       });
     } catch (e) {
       Alert.alert("Please connect a spotify device");
@@ -191,7 +193,7 @@ export default class SongPlayer extends React.Component {
         playing: false,
         current: trackimg[0],
         songName: trackimg[1],
-        trackPlaying: trackimg[2]
+        artistPlaying: trackimg[2]
       });
     } catch (e) {
       Alert.alert("Please connect a spotify device");
@@ -207,7 +209,7 @@ export default class SongPlayer extends React.Component {
         playing: true,
         current: img[0],
         songName: img[1],
-        trackPlaying: img[2]
+        artistPlaying: img[2]
       });
     } catch (e) {
       const img = await this.apiGetTrackImage(token);
@@ -216,7 +218,7 @@ export default class SongPlayer extends React.Component {
         playing: true,
         current: img[0],
         songName: img[1],
-        trackPlaying: img[2]
+        artistPlaying: img[2]
       });
       console.log(e);
     }
@@ -270,7 +272,7 @@ export default class SongPlayer extends React.Component {
         playing: false,
         current: img[0],
         songName: img[1],
-        trackPlaying: img[2]
+        artistPlaying: img[2]
       });
     } catch (e) {
       Alert.alert("Please connect a spotify device");

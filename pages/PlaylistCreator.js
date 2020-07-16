@@ -39,7 +39,7 @@ export default class PlaylistCreator extends React.Component {
     const that = this;
     this.setState({ creating: true });
     await setData("Stats", this.state);
-    const songs = await new SongEngine(this.state).algorithm(which, "artists");
+    const songs = await new SongEngine(this.state).algorithm(which, false);
     await setData("playlistData", songs);
     that.props.navigation.navigate("PlaylistResults");
     this.setState({ creating: false });
