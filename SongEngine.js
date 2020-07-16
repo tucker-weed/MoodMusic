@@ -139,11 +139,13 @@ export default class SongEngine {
   _artistsToPlaylist = async (artistIds, token, TorA) => {
     const songsToReturn = [];
     const addedArtists = {};
+    const songMap = {};
+    let check = true;
     let filtered = [];
     const start = new Date().getTime();
 
     while (filtered && songsToReturn.length < 100 && !this.timeout(start, 7)) {
-      const trackCheck = TorA === "tracks" && addedArtists.length == 0;
+      const trackCheck = TorA === "tracks" && check;
       const idAccum = [];
       let stopper = 0;
       let stop = artistIds.length > 5 ? 5 : artistIds.length;
@@ -160,10 +162,8 @@ export default class SongEngine {
 
       let songsAndResponse;
       if (trackCheck) {
-        songsAndResponse =
-          idAccum.length > 0
-            ? await this._getSeededRecs(artistIds[0], token, true)
-            : null;
+        check = false;
+        songsAndResponse = await this._getSeededRecs([artistIds[0]], token, true);
       } else {
         songsAndResponse =
           idAccum.length > 0
@@ -177,8 +177,14 @@ export default class SongEngine {
           token,
           songsAndResponse[0]
         );
-        const replace =
-          filtered.length > 100 ? filtered.slice(0, 100) : filtered;
+        let replace = [];
+        for (let n = 0; n < filtered.length; n++) {
+          if (!songMap[filtered[n]["track"] ? filtered[n].track.id : filtered[n].id]) {
+            songMap[filtered[n]["track"] ? filtered[n].track.id : filtered[n].id] = true;
+            replace.push(filtered[n]);
+          }
+        }
+        replace = replace.length > 100 ? replace.slice(0, 100) : replace;
         songsToReturn.push(...replace);
       }
     }
@@ -245,10 +251,8 @@ export default class SongEngine {
       }
       refinedTracks = await this._filterSongs(start, response, token, idString);
     } else if (which === "create") {
-      if (TorA === "tracks") {
+      if (TorA === "tracks" || TorA === "artists") {
         artistIds.unshift(trackSeed);
-        refinedTracks = await this._artistsToPlaylist(artistIds, token, TorA);
-      } else if (TorA === "artists") {
         refinedTracks = await this._artistsToPlaylist(artistIds, token, TorA);
       } else {
         console.error("Argument 'TorA' is restricted to 'tracks' or 'artists'");
