@@ -111,7 +111,7 @@ export default class SongEngine {
     const idString = artistIds.join(",");
     let url;
     if (TorA) {
-      url = `https://api.spotify.com/v1/recommendations?limit=50&seed_tracks=${idString}&market=from_token`;
+      url = `https://api.spotify.com/v1/recommendations?limit=75&seed_tracks=${idString}&market=from_token`;
     } else {
       url = `https://api.spotify.com/v1/recommendations?limit=50&seed_artists=${idString}&market=from_token`;
     }
@@ -143,10 +143,11 @@ export default class SongEngine {
     const start = new Date().getTime();
 
     while (filtered && songsToReturn.length < 100 && !this.timeout(start, 7)) {
+      const trackCheck = TorA === "tracks" && addedArtists.length == 0;
       const idAccum = [];
       let stopper = 0;
       let stop = artistIds.length > 5 ? 5 : artistIds.length;
-      while (stopper < stop) {
+      while (stopper < stop && !trackCheck) {
         const idToAdd = artistIds[stopper];
         if (addedArtists[idToAdd] && stop + 1 < artistIds.length) {
           stop++;
@@ -158,14 +159,10 @@ export default class SongEngine {
       }
 
       let songsAndResponse;
-      if (
-        TorA === "tracks" &&
-        addedArtists.length > 0 &&
-        addedArtists.length <= 5
-      ) {
+      if (trackCheck) {
         songsAndResponse =
           idAccum.length > 0
-            ? await this._getSeededRecs(idAccum, token, true)
+            ? await this._getSeededRecs(artistIds[0], token, true)
             : null;
       } else {
         songsAndResponse =
@@ -198,7 +195,7 @@ export default class SongEngine {
   algorithm = async (which, TorA) => {
     let refinedTracks;
     const start = new Date().getTime();
-    const trackSeeds = await getData("TrackSeeds");
+    const trackSeed = await getData("TrackSeed");
     const addedArtists = {};
     const token = this.state.token
       ? this.state.token
@@ -249,7 +246,7 @@ export default class SongEngine {
       refinedTracks = await this._filterSongs(start, response, token, idString);
     } else if (which === "create") {
       if (TorA === "tracks") {
-        artistIds.unshift(...trackSeeds);
+        artistIds.unshift(trackSeed);
         refinedTracks = await this._artistsToPlaylist(artistIds, token, TorA);
       } else if (TorA === "artists") {
         refinedTracks = await this._artistsToPlaylist(artistIds, token, TorA);

@@ -43,11 +43,9 @@ export default class SongPlayer extends React.Component {
 
   like = async () => {
     const that = this;
-    if (this.state.likes >= 4 && this.state.trackPlaying) {
-      Alert.alert("Upvoted Song: updating seed...");
-      const newIds = this.state.trackIds;
-      newIds.push(this.state.trackPlaying);
-      await setData("TrackSeeds", newIds);
+    if (this.state.trackPlaying) {
+      Alert.alert("Upvoted Song");
+      await setData("TrackSeed", this.state.trackPlaying);
 
       const playlist = await new SongEngine(await getData("Stats")).algorithm(
         "create",
@@ -67,12 +65,7 @@ export default class SongPlayer extends React.Component {
       }
       await setData("playlistData", playlist);
       await this.apiPut(url, token, ids);
-      this.setState({ likes: 0 });
-    } else {
-      Alert.alert("Upvoted Song");
-      const newIds = that.state.trackIds;
-      newIds.unshift(that.state.trackPlaying);
-      this.setState({ trackIds: newIds, likes: that.state.likes + 1 });
+      this.setState({ likes: that.state.likes + 1 });
     }
   };
 
