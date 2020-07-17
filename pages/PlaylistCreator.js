@@ -5,25 +5,22 @@ import Slider from "@react-native-community/slider";
 
 import { Mytext, MytextTwo } from "../components/Mytext.js";
 import SongEngine from "../SongEngine.js";
-import { setData } from "../LocalStorage.js";
+import { getData, setData } from "../LocalStorage.js";
 import { styles } from "../Styles.js";
 
 export default class PlaylistCreator extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      userInfo: null,
-      token: null,
-      playlist: null,
       isEnabled: false,
-      lookArtists: false,
+      isEnabled2: false,
+      majMin: 0,
       creating: false,
       tempo: 0,
       euphoria: 0,
       hype: 0,
       key: 0,
-      sPopularity: 0,
-      aPopularity: 0
+      sPopularity: 0
     };
   }
 
@@ -32,14 +29,23 @@ export default class PlaylistCreator extends React.Component {
   };
 
   toggleSwitch2 = () => {
-    this.setState({ lookArtists: !this.state.lookArtists });
+    this.setState({ majMin: this.state.majMin == 0 ? 1 : 0 });
+  };
+
+  toggleSwitch3 = () => {
+    this.setState({ isEnabled2: !this.state.isEnabled2 });
   };
 
   activateAlgorithm = async which => {
     const that = this;
     this.setState({ creating: true });
     await setData("Stats", this.state);
-    const songs = await new SongEngine(this.state).algorithm(which, false);
+    const id = await getData("playlistId");
+    const token = await getData("accessToken");
+    const songs = await new SongEngine(this.state, id, token).algorithm(
+      which,
+      null
+    );
     await setData("playlistData", songs);
     that.props.navigation.navigate("PlaylistResults");
     this.setState({ creating: false });
@@ -85,8 +91,8 @@ export default class PlaylistCreator extends React.Component {
           <MytextTwo text={"Euphoria: " + this.state.euphoria} />
           <Slider
             style={{ width: 300, height: 40 }}
-            minimumValue={0}
-            maximumValue={200}
+            minimumValue={-275}
+            maximumValue={275}
             disabled={this.state.creating ? true : false}
             minimumTrackTintColor="#FFFFFF"
             maximumTrackTintColor="#000000"
@@ -94,11 +100,11 @@ export default class PlaylistCreator extends React.Component {
           />
         </View>
         <View style={localStyles.container}>
-          <MytextTwo text={"Hype: " + this.state.hype} />
+          <MytextTwo text={"Energy: " + this.state.hype} />
           <Slider
             style={{ width: 300, height: 40 }}
-            minimumValue={0}
-            maximumValue={700}
+            minimumValue={-875}
+            maximumValue={875}
             disabled={this.state.creating ? true : false}
             minimumTrackTintColor="#FFFFFF"
             maximumTrackTintColor="#000000"
@@ -120,28 +126,6 @@ export default class PlaylistCreator extends React.Component {
           />
         </View>
         <View style={localStyles.container}>
-          <Mytext text={"Artist Popularity: " + this.state.aPopularity} />
-          <Switch
-            trackColor={{ false: "#767577", true: "#81b0ff" }}
-            thumbColor="#f4f3f4"
-            disabled={this.state.creating ? true : false}
-            ios_backgroundColor="#3e3e3e"
-            onValueChange={this.toggleSwitch2}
-            value={this.state.lookArtists}
-          />
-          <Slider
-            style={{ width: 300, height: 40 }}
-            minimumValue={0}
-            maximumValue={100}
-            disabled={this.state.creating ? true : false}
-            minimumTrackTintColor="#FFFFFF"
-            maximumTrackTintColor="#000000"
-            onValueChange={val =>
-              this.setState({ aPopularity: Math.round(val) })
-            }
-          />
-        </View>
-        <View style={localStyles.container}>
           <Mytext text={"Tempo: " + this.state.tempo} />
           <Slider
             style={{ width: 300, height: 40 }}
@@ -155,6 +139,23 @@ export default class PlaylistCreator extends React.Component {
         </View>
         <View style={localStyles.container}>
           <Mytext text={"Key: " + this.state.key} />
+          <Mytext text={"Key Switch - Major/Minor - Key Slider"} />
+          <Switch
+            trackColor={{ false: "#767577", true: "#81b0ff" }}
+            thumbColor="#f4f3f4"
+            disabled={this.state.creating ? true : false}
+            ios_backgroundColor="#3e3e3e"
+            onValueChange={this.toggleSwitch3}
+            value={this.state.isEnabled2}
+          />
+          <Switch
+            trackColor={{ false: "#767577", true: "#81b0ff" }}
+            thumbColor="#f4f3f4"
+            disabled={this.state.creating ? true : false}
+            ios_backgroundColor="#3e3e3e"
+            onValueChange={this.toggleSwitch2}
+            value={this.state.majMin == 0 ? false : true}
+          />
           <Switch
             trackColor={{ false: "#767577", true: "#81b0ff" }}
             thumbColor="#f4f3f4"

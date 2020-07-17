@@ -46,16 +46,16 @@ export default class SongPlayer extends React.Component {
       Alert.alert("Upvoted Song - Updating Seed...");
       const replace = this.state.artistLikes;
       replace.unshift(this.state.artistPlaying);
-      await setData("ArtistSeeds", replace);
-
-      const playlist = await new SongEngine(await getData("Stats")).algorithm(
-        "create",
-        true
-      );
-      const playlistId = await getData("mmPlaylist");
+      const playlistId = await getData("playlistId");
+      const mmId = await getData("mmPlaylist");
       const token = await getData("accessToken");
+      const stats = await getData("Stats");
+      const playlist = await new SongEngine(stats, playlistId, token).algorithm(
+        "create",
+        replace
+      );
       const url =
-        "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
+        "https://api.spotify.com/v1/playlists/" + mmId + "/tracks";
       const ids = [];
 
       for (let i = 0; i < playlist.length; i++) {

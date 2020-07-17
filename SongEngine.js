@@ -1,57 +1,74 @@
 import axios from "axios";
-import { getData } from "./LocalStorage.js";
 
 /**
  * SongEngine class contains methods which filter or produce songs on spotify
  *
- * @param stats - saved component state which contains user input values
+ * @param state - saved component state which contains user input values
+ * @param playlistId - target playlist id to fill with songs
+ * @param token - user authenticated access token for API requests
  */
 export default class SongEngine {
-  constructor(stats) {
-    this.state = stats;
+  constructor(state, playlistId, token) {
+    this.playlistId = playlistId;
+    this.token = token;
+    this.state = state;
+    /**
+     * LIMIT: a number, the spotify API limit on POST data length.
+     * RESTRICTED TO: less than or equal to 100.
+     */
+    this.LIMIT = 100;
   }
 
   /**
    * Requests information based on url and gives a response
    *
    * @param url - the url of the spotify api with a given endpoint
-   * @param token - the authorization token to pass to the api
-   * @returns - a json object being the api response, or null
+   * @returns - a json object being the api response, or an error
    */
-  _apiGet = async (url, token) => {
+  _apiGet = async url => {
     return await axios.get(url, {
       headers: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${this.token}`
       }
     });
   };
 
   /**
-   * Produces a random number between 0 and argument 'max'
+   * Returns true after a certain deadline
    *
-   * @param max - the upper bound of the range to select a random number
-   * @returns - a number between 0 and 'max'
+   * @param start - the reference start for the timeout range
+   * @param deadline - the time, in seconds, until timeout
+   * @returns - a boolean, true if timeout has been reached, false otherwise
    */
-  _getRandomInt = max => {
-    const min = 0;
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+  _timeout = (start, deadline) => {
+    return new Date().getTime() - start >= deadline * 1000;
+  };
+
+  /**
+   * Randomly shuffles an Array in place
+   *
+   * @param _array - the input Array to be shuffled
+   */
+  _shuffleArray = _array => {
+    for (let i = _array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [_array[i], _array[j]] = [_array[j], _array[i]];
+    }
   };
 
   /**
    * Takes a string of track IDs and filters the tracks based on state values
    *
    * @param start - start time of the algorithm
-   * @param response - a reference to an api response of Track Info json
-   * @param token - user authentication token, a string
+   * @param data - a reference to an api response of Track Info json
    * @param idString - a string composed of track IDs
    * @returns - an array of Track Information json
    */
-  _filterSongs = async (start, response, token, idString) => {
+  _filterSongs = async (start, data, idString) => {
     let songsToReturn = [];
     const songsUrl =
       "https://api.spotify.com/v1/audio-features/?ids=" + idString;
-    const trackData = await this._apiGet(songsUrl, token);
+    const trackData = await this._apiGet(songsUrl);
     let existenceCheck = () => {
       trackData["data"] &&
         trackData.data["audio_features"] &&
@@ -64,32 +81,40 @@ export default class SongEngine {
     while (
       existenceCheck &&
       j < trackData.data.audio_features.length &&
-      !this.timeout(start, 7)
+      !this._timeout(start, 7)
     ) {
       features = trackData.data.audio_features;
       const euphoria =
-        features[j].danceability * 100 + features[j].valence * 100;
+        this.state.euphoria >= 0
+          ? features[j].danceability * 100 +
+            features[j].valence * 100 +
+            features[j].energy * 75
+          : (1 - features[j].danceability) * 100 +
+            (1 - features[j].valence) * 100 +
+            (1 - features[j].energy) * 75;
       const hype =
-        features[j].tempo * 2 +
-        features[j].energy * 150 +
-        features[j].acousticness * 75 +
-        features[j].danceability * 150;
-      if (
+        this.state.hype >= 0
+          ? features[j].tempo * 2 +
+            features[j].energy * 150 +
+            features[j].acousticness * 75 +
+            features[j].danceability * 150
+          : 500 -
+            features[j].tempo * 2 +
+            (1 - features[j].energy) * 150 +
+            (1 - features[j].acousticness) * 75 +
+            (1 - features[j].danceability) * 150;
+      const filteredValuesCheck =
         features[j].tempo > this.state.tempo &&
-        euphoria > this.state.euphoria &&
-        hype > this.state.hype &&
-        (!this.state.isEnabled || features[j].key == this.state.key)
-      ) {
-        if (
-          response.data["items"] &&
-          response.data.items[j].track.popularity > this.state.sPopularity
-        ) {
-          songsToReturn.push(response.data.items[j]);
-        } else if (
-          response.data["tracks"] &&
-          response.data.tracks[j].popularity > this.state.sPopularity
-        ) {
-          songsToReturn.push(response.data.tracks[j]);
+        euphoria > Math.abs(this.state.euphoria) &&
+        hype > Math.abs(this.state.hype) &&
+        (!this.state.isEnabled || features[j].key == this.state.key);
+      const pop = this.state.sPopularity;
+
+      if (filteredValuesCheck) {
+        if (data["items"] && data.items[j].track.popularity > pop) {
+          songsToReturn.push(data.items[j]);
+        } else if (data["tracks"] && data.tracks[j].popularity > pop) {
+          songsToReturn.push(data.tracks[j]);
         }
       }
       j++;
@@ -102,172 +127,134 @@ export default class SongEngine {
    * Takes an array of 5 seed IDs and produces 100 recommendations
    *
    * @param artistIds - an array of artist ID strings
-   * @param token - user authentication token, a string
-   * @param TorA - a boolean representing true for tracks and false for artists
    * @returns - a two element array, with index 0 being an array of track ID
    *            strings, and with index 1 being Track Info json
    */
-  _getSeededRecs = async (artistIds, token) => {
+  _getSeededRecs = async artistIds => {
     const idString = artistIds.join(",");
-    const url = `https://api.spotify.com/v1/recommendations?limit=50&seed_artists=${idString}&market=from_token`;
-    const response = await this._apiGet(url, token);
+    const url =
+      "https://api.spotify.com/v1/recommendations?limit=50&seed_artists=" +
+      idString +
+      "&market=from_token";
+    const response = await this._apiGet(url);
     const tracks = response.data.tracks;
     const trackIds = [];
 
-    for (let n = 0; n < tracks.length; n++) {
-      trackIds.push(tracks[n].id);
+    for (let i = 0; i < tracks.length; i++) {
+      trackIds.push(tracks[i].id);
     }
 
     return [trackIds, response];
-  };
-
-  timeout = (start, deadline) => {
-    return new Date().getTime() - start >= deadline * 1000;
   };
 
   /**
    * Takes an array of Artist json and produces 100 track IDs
    *
    * @param artistIds - an array of artist ID strings
-   * @param token - user authentication token, a string
    */
-  _artistsToPlaylist = async (artistIds, token) => {
+  _artistsToPlaylist = async artistIds => {
+    const start = new Date().getTime();
     const songsToReturn = [];
     const addedArtists = {};
-    const songMap = {};
-    let filtered = [];
-    const start = new Date().getTime();
+    const addedSongs = {};
+    let songsAndResponse = true;
 
-    while (filtered && songsToReturn.length < 100 && !this.timeout(start, 7)) {
+    while (
+      songsAndResponse &&
+      songsToReturn.length < this.LIMIT &&
+      !this._timeout(start, 7)
+    ) {
       const idAccum = [];
-      let stopper = 0;
-      let stop = artistIds.length > 5 ? 5 : artistIds.length;
-      while (stopper < stop) {
-        const idToAdd = artistIds[stopper];
-        if (addedArtists[idToAdd] && stop + 1 < artistIds.length) {
-          stop++;
-        } else if (!addedArtists[idToAdd]) {
-          idAccum.push(idToAdd);
-          addedArtists[idToAdd] = true;
+      for (let i = 0; i < artistIds.length && idAccum.length < 5; i++) {
+        if (!addedArtists[artistIds[i]]) {
+          idAccum.push(artistIds[i]);
+          addedArtists[artistIds[i]] = true;
         }
-        stopper++;
       }
 
-      const songsAndResponse =
-        idAccum.length > 0
-          ? await this._getSeededRecs(idAccum, token, false)
-          : null;
+      songsAndResponse =
+        idAccum.length > 0 ? await this._getSeededRecs(idAccum, false) : null;
+
       if (songsAndResponse && songsAndResponse[0].length > 0) {
-        filtered = await this._filterSongs(
+        const filtered = await this._filterSongs(
           start,
-          songsAndResponse[1],
-          token,
+          songsAndResponse[1].data,
           songsAndResponse[0]
         );
-        let replace = [];
-        for (let n = 0; n < filtered.length; n++) {
-          if (
-            !songMap[
-              filtered[n]["track"] ? filtered[n].track.id : filtered[n].id
-            ]
-          ) {
-            songMap[
-              filtered[n]["track"] ? filtered[n].track.id : filtered[n].id
-            ] = true;
-            replace.push(filtered[n]);
+        const uniqueSongs = [];
+        for (let i = 0; i < filtered.length; i++) {
+          const id = filtered[i]["track"]
+            ? filtered[i].track.id
+            : filtered[i].id;
+          if (!addedSongs[id]) {
+            addedSongs[id] = true;
+            uniqueSongs.push(filtered[i]);
           }
         }
-        replace = replace.length > 100 ? replace.slice(0, 100) : replace;
-        songsToReturn.push(...replace);
+        songsToReturn.push(
+          ...uniqueSongs.slice(0, this.LIMIT - songsToReturn.length)
+        );
       }
     }
-    return songsToReturn.slice(0, 100);
+
+    return songsToReturn;
   };
 
   /**
    * Main entry point for interaction with the spotify api
    *
-   * @param which - a string, either 'filter' or 'create'
-   * @param TorA - a string, either 'tracks' or 'artists'
-   * @returns - an array of Track Info Json
+   * @param mode - a string, either 'filter' or 'create'
+   * @param artistSeeds - an Array of artistIds to add, or null
+   * @returns - an Array of Track Info Json
    */
-  algorithm = async (which, radio) => {
-    let refinedTracks;
-    const start = new Date().getTime();
-    const artistSeeds = await getData("ArtistSeeds");
-    const addedArtists = {};
-    const token = this.state.token
-      ? this.state.token
-      : await getData("accessToken");
-    const playlistId = await getData("playlistId");
+  algorithm = async (mode, artistSeeds) => {
     const url =
-      "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
-    const response = await this._apiGet(url, token);
-    const items = response.data.items;
-    let artistIds = [];
+      "https://api.spotify.com/v1/playlists/" + this.playlistId + "/tracks";
+    const response = await this._apiGet(url);
+    const playlistItems = response.data.items;
+    const start = new Date().getTime();
+    const artistIds = [];
+    const addedArtists = {};
+    let playlistToReturn;
 
-    const shuffleArray = arr => {
-      const _array = arr;
-      for (let i = _array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [_array[i], _array[j]] = [_array[j], _array[i]];
-      }
-      return _array;
-    };
-
-    for (let s = 0; s < items.length; s++) {
-      if (items[s].track.artists[0]) {
-        const idToAdd = items[s].track.artists[0].id;
+    for (let i = 0; i < playlistItems.length; i++) {
+      if (playlistItems[i].track.artists[0]) {
+        const idToAdd = playlistItems[i].track.artists[0].id;
         if (addedArtists[idToAdd]) {
-          addedArtists[idToAdd].push(items[s].track.id);
+          addedArtists[idToAdd].push(playlistItems[i].track.id);
         } else {
           artistIds.push(idToAdd);
-          addedArtists[idToAdd] = [items[s].track.id];
+          addedArtists[idToAdd] = [playlistItems[i].track.id];
         }
       }
     }
 
-    if (which === "filter") {
+    if (mode === "filter") {
       let idString = "";
-      for (let k = 0; k < artistIds.length; k++) {
-        const urlTwo = "https://api.spotify.com/v1/artists/" + artistIds[k];
-        try {
-          const responseTwo = this.state.lookArtists
-            ? await this._apiGet(urlTwo, token)
-            : null;
-          if (
-            !this.state.lookArtists ||
-            responseTwo.data.popularity > this.state.aPopularity
-          ) {
-            for (let c = 0; c < addedArtists[artistIds[k]].length; c++) {
-              if (artistIds.length - c == 1) {
-                idString += addedArtists[artistIds[k]][c];
-              } else {
-                idString += addedArtists[artistIds[k]][c] + ",";
-              }
-            }
-          }
-        } catch (e) {
-          console.log(e);
+      let idsAdded = 0;
+      for (let k = 0; k < artistIds.length && idsAdded < this.LIMIT; k++) {
+        const artistTracks = addedArtists[artistIds[k]];
+        for (let c = 0; c < artistTracks.length && idsAdded < this.LIMIT; c++) {
+          idString += artistTracks[c] + ",";
+          idsAdded++;
         }
       }
-      refinedTracks = await this._filterSongs(start, response, token, idString);
-    } else if (which === "create") {
-      if (radio) {
-        artistIds.unshift(...artistSeeds);
-        refinedTracks = await this._artistsToPlaylist(
-          shuffleArray(artistIds),
-          token
-        );
-      } else {
-        refinedTracks = await this._artistsToPlaylist(
-          shuffleArray(artistIds),
-          token
-        );
-      }
+      playlistToReturn = await this._filterSongs(
+        start,
+        response.data,
+        idString
+      );
+    } else if (mode === "create" && artistSeeds) {
+      artistIds.unshift(...artistSeeds);
+      this._shuffleArray(artistIds);
+      playlistToReturn = await this._artistsToPlaylist(artistIds);
+    } else if (mode === "create") {
+      this._shuffleArray(artistIds);
+      playlistToReturn = await this._artistsToPlaylist(artistIds);
     } else {
-      console.error("Argument 'which' is restricted to 'filter' or 'create'");
+      console.error("Argument 'mode' is restricted to 'filter' or 'create'");
     }
-    return refinedTracks;
+
+    return playlistToReturn;
   };
 }
