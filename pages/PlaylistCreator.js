@@ -50,6 +50,7 @@ export default class PlaylistCreator extends React.Component {
       );
       await setData("playlistData", songs);
       await setData("returning", that.state.init);
+      that.state.init ? null : await setData("radioTracks", []);
       this.props.navigation.navigate("PlaylistResults");
       this.setState({ creating: false, init: true });
     } else {

@@ -6,8 +6,11 @@ import {
   FlatList,
   Text,
   TouchableOpacity,
-  Keyboard
+  Keyboard,
+  StyleSheet,
+  Switch
 } from "react-native";
+import Slider from "@react-native-community/slider";
 import { ButtonOne } from "../components/MyButtons.js";
 import { styles } from "../Styles.js";
 import axios from "axios";
@@ -32,9 +35,21 @@ export default class SongPlayer extends React.Component {
       artistPlaying: null,
       trackPlaying: null,
       artistLikes: [],
-      trackLikes: []
+      trackLikes: [],
+      trackDuration: 1000,
+      tPos: 0,
+      shuffle: false
     };
   }
+
+  toggleSwitch = async () => {
+    const url =
+      "https://api.spotify.com/v1/me/player/shuffle?state=" +
+      !this.state.shuffle;
+    const token = await getData("accessToken");
+    await this.apiPutRegular(url, token);
+    this.setState({ shuffle: !this.state.shuffle });
+  };
 
   /**
    * Requests information based on url and gives a response
@@ -157,7 +172,7 @@ export default class SongPlayer extends React.Component {
   };
 
   apiGetTrackImage = async token => {
-    let img = ["", "", "", ""];
+    let img = ["", "", "", "", ""];
     const response = await axios.get("https://api.spotify.com/v1/me/player", {
       headers: {
         Authorization: `Bearer ${token}`
@@ -174,6 +189,8 @@ export default class SongPlayer extends React.Component {
       img[1] = response.data.item.name;
       img[2] = response.data.item.album.artists[0].id;
       img[3] = response.data.item.id;
+      img[4] = response.data.item.duration_ms;
+      img[5] = response.data.progress_ms;
     }
     return img;
   };
@@ -294,7 +311,9 @@ export default class SongPlayer extends React.Component {
         current: trackimg[0],
         songName: trackimg[1],
         artistPlaying: trackimg[2],
-        trackPlaying: trackimg[3]
+        trackPlaying: trackimg[3],
+        trackDuration: trackimg[4],
+        tPos: 0
       });
     } catch (e) {
       Alert.alert("Please connect a spotify device");
@@ -316,11 +335,13 @@ export default class SongPlayer extends React.Component {
         urlTracker = trackimg[0];
       }
       this.setState({
-        playing: false,
+        playing: true,
         current: trackimg[0],
         songName: trackimg[1],
         artistPlaying: trackimg[2],
-        trackPlaying: trackimg[3]
+        trackPlaying: trackimg[3],
+        trackDuration: trackimg[4],
+        tPos: 0
       });
     } catch (e) {
       Alert.alert("Please connect a spotify device");
@@ -373,7 +394,9 @@ export default class SongPlayer extends React.Component {
         current: img[0],
         songName: img[1],
         artistPlaying: img[2],
-        trackPlaying: img[3]
+        trackPlaying: img[3],
+        trackDuration: img[4],
+        tPos: img[5]
       });
     } catch (e) {
       const img = await this.apiGetTrackImage(token);
@@ -383,7 +406,9 @@ export default class SongPlayer extends React.Component {
         current: img[0],
         songName: img[1],
         artistPlaying: img[2],
-        trackPlaying: img[3]
+        trackPlaying: img[3],
+        trackDuration: img[4],
+        tPos: img[5]
       });
       console.log(e);
     }
@@ -440,7 +465,9 @@ export default class SongPlayer extends React.Component {
         current: img[0],
         songName: img[1],
         artistPlaying: img[2],
-        trackPlaying: img[3]
+        trackPlaying: img[3],
+        trackDuration: img[4],
+        tPos: img[5]
       });
     } catch (e) {
       Alert.alert("Please connect a spotify device");
@@ -457,7 +484,6 @@ export default class SongPlayer extends React.Component {
           flexDirection: "column"
         }}
       >
-        <Mytext text={"Song Navigation"} />
         <Mytextinput
           placeholder="Enter Name"
           style={{ padding: 10 }}
@@ -495,10 +521,10 @@ export default class SongPlayer extends React.Component {
           {this.state.current ? (
             <Image
               style={{
-                height: 125,
-                width: 125,
-                marginBottom: 32,
-                marginTop: 50
+                height: 100,
+                width: 100,
+                marginBottom: 10,
+                marginTop: 40
               }}
               source={
                 this.state.current ? { uri: this.state.current } : { uri: "" }
@@ -506,6 +532,38 @@ export default class SongPlayer extends React.Component {
             />
           ) : null}
           <Mytext text={this.state.songName ? this.state.songName : ""} />
+          <View style={localStyles.container}>
+            <Mytext text={"Shuffle & Progress"} />
+            <Switch
+              trackColor={{ false: "#767577", true: "#81b0ff" }}
+              thumbColor="#f4f3f4"
+              disabled={this.state.trackPlaying ? false : true}
+              ios_backgroundColor="#3e3e3e"
+              onValueChange={this.toggleSwitch}
+              value={this.state.shuffle}
+            />
+            <Slider
+              style={{ width: 320, height: 40 }}
+              minimumValue={0}
+              value={Math.round(this.state.tPos / 1000)}
+              maximumValue={Math.round(this.state.trackDuration / 1000)}
+              disabled={this.state.trackPlaying ? false : true}
+              minimumTrackTintColor="#FFFFFF"
+              maximumTrackTintColor="#000000"
+              onValueChange={val =>
+                this.setState({ tPos: Math.round(val * 1000) })
+              }
+              onSlidingComplete={async val => {
+                if (this.state.trackPlaying) {
+                  const token = await getData("accessToken");
+                  const url =
+                    "https://api.spotify.com/v1/me/player/seek?position_ms=" +
+                    Math.round(val * 1000);
+                  await this.apiPutRegular(url, token);
+                }
+              }}
+            />
+          </View>
           {this.state.playlist ? (
             <Text
               style={{
@@ -582,3 +640,15 @@ export default class SongPlayer extends React.Component {
     );
   }
 }
+
+const localStyles = StyleSheet.create({
+  container: {
+    alignItems: "center",
+    backgroundColor: "#2FD566",
+    color: "#ffffff",
+    padding: 0,
+    marginTop: 3,
+    marginLeft: 35,
+    marginRight: 35
+  }
+});
