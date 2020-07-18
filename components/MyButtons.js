@@ -91,12 +91,12 @@ const buttonStyles4 = StyleSheet.create({
     color: "white",
     padding: 10,
     marginTop: 16,
-    marginLeft: 47,
+    marginLeft: 49,
     marginRight: 48
   },
   text: {
     color: "white",
     fontWeight: "bold",
-    fontSize: 20
+    fontSize: 18
   }
 });

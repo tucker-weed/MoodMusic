@@ -27,7 +27,7 @@ export default class MoodHome extends React.Component {
     return await axios.get(url, {
       headers: {
         Authorization: `Bearer ${token}`
-      }
+      },
     });
   };
 

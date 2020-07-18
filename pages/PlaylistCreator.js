@@ -16,6 +16,7 @@ export default class PlaylistCreator extends React.Component {
       isEnabled2: false,
       majMin: 0,
       creating: false,
+      init: false,
       tempo: 0,
       euphoria: 0,
       hype: 0,
@@ -38,17 +39,24 @@ export default class PlaylistCreator extends React.Component {
 
   activateAlgorithm = async which => {
     const that = this;
-    this.setState({ creating: true });
-    await setData("Stats", this.state);
-    const id = await getData("playlistId");
-    const token = await getData("accessToken");
-    const songs = await new SongEngine(this.state, id, token).algorithm(
-      which,
-      null
-    );
-    await setData("playlistData", songs);
-    that.props.navigation.navigate("PlaylistResults");
-    this.setState({ creating: false });
+    if (which !== "returning") {
+      this.setState({ creating: true });
+      await setData("Stats", this.state);
+      const id = await getData("playlistId");
+      const token = await getData("accessToken");
+      const songs = await new SongEngine(this.state, id, token).algorithm(
+        which,
+        null
+      );
+      await setData("playlistData", songs);
+      await setData("returning", that.state.init);
+      this.props.navigation.navigate("PlaylistResults");
+      this.setState({ creating: false, init: true });
+    } else {
+      await setData("Stats", that.state);
+      await setData("returning", that.state.init);
+      this.props.navigation.navigate("PlaylistResults");
+    }
   };
 
   render() {
@@ -76,6 +84,16 @@ export default class PlaylistCreator extends React.Component {
             >
               <Text style={styles.buttonText}>Spawn Playlist</Text>
             </TouchableOpacity>
+            {this.state.init ? (
+              <TouchableOpacity
+                style={styles.skinnyButton}
+                onPress={() => this.activateAlgorithm("returning")}
+              >
+                <Text style={styles.buttonText}>
+                  Return to Current Playlist
+                </Text>
+              </TouchableOpacity>
+            ) : null}
             <TouchableOpacity
               style={styles.skinnyButton}
               onPress={() =>

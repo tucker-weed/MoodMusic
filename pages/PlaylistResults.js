@@ -3,7 +3,7 @@ import { FlatList, TouchableOpacity, Text, View, Image } from "react-native";
 import axios from "axios";
 
 import { styles } from "../Styles.js";
-import { getData } from "../LocalStorage.js";
+import { setData, getData } from "../LocalStorage.js";
 import { Mytext } from "../components/Mytext.js";
 
 export default class PlaylistResults extends React.Component {
@@ -12,7 +12,8 @@ export default class PlaylistResults extends React.Component {
     this.state = {
       userInfo: null,
       token: null,
-      playlist: null
+      playlist: null,
+      returning: false
     };
   }
 
@@ -71,9 +72,20 @@ export default class PlaylistResults extends React.Component {
     this.setState({ userInfo: data, token: token, playlist: playlist });
   };
 
-  nav = () => {
-    this.setState({ userInfo: null, token: null, playlist: null });
-    this.props.navigation.navigate("SongPlayer");
+  nav = async () => {
+    const that = this;
+    this.setState({
+      userInfo: null,
+      token: null,
+      playlist: null,
+      returning: true
+    });
+    if (that.state.returning) {
+      await setData("returning", true);
+      this.props.navigation.navigate("SongPlayer");
+    } else {
+      this.props.navigation.navigate("SongPlayer");
+    }
   };
 
   render() {

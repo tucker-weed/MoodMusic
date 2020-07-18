@@ -71,6 +71,7 @@ export default class SpotifyLogin extends React.Component {
       );
 
       await setData("userData", userInfo.data);
+      await setData("userId", userInfo.data.id);
       await setData("accessToken", results.params.access_token);
       this.setState({
         userInfo: userInfo.data,

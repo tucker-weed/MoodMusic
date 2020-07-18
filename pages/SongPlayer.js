@@ -1,8 +1,18 @@
 import React from "react";
-import { View, Image, Alert } from "react-native";
+import {
+  View,
+  Image,
+  Alert,
+  FlatList,
+  Text,
+  TouchableOpacity,
+  Keyboard
+} from "react-native";
 import { ButtonOne } from "../components/MyButtons.js";
+import { styles } from "../Styles.js";
 import axios from "axios";
 import { setData, getData } from "../LocalStorage.js";
+import Mytextinput from "../components/Mytextinput.js";
 import { PlayerButton } from "../components/MyButtons.js";
 import { Mytext } from "../components/Mytext.js";
 import SongEngine from "../SongEngine.js";
@@ -14,13 +24,31 @@ export default class SongPlayer extends React.Component {
       navigated: false,
       playing: false,
       current: null,
-      songQueue: null,
-      engine: null,
+      playlist: null,
+      reload: false,
+      init: false,
+      playlistName: "",
       likes: 0,
       artistPlaying: null,
-      artistLikes: []
+      trackPlaying: null,
+      artistLikes: [],
+      trackLikes: []
     };
   }
+
+  /**
+   * Requests information based on url and gives a response
+   *
+   * @param url - the url of the spotify api with a given endpoint
+   * @returns - a json object being the api response, or an error
+   */
+  _apiGet = async (url, token) => {
+    return await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  };
 
   apiPut = async (url, token, trackIds) => {
     const jsonData = {
@@ -41,11 +69,43 @@ export default class SongPlayer extends React.Component {
     );
   };
 
+  createNewPlaylist = async () => {
+    Keyboard.dismiss();
+    const name = this.state.playlistName;
+    Alert.alert("Created Playlist: " + name);
+    const token = await getData("accessToken");
+    const userId = await getData("userId");
+    const playlistUrl =
+      "https://api.spotify.com/v1/users/" + userId + "/playlists";
+    const response = await this.apiPutNew(playlistUrl, token, name);
+    const trackUrl =
+      "https://api.spotify.com/v1/playlists/" + response.data.id + "/tracks";
+    const uriList = [];
+    for (let i = 0; i < this.state.trackLikes.length; i++) {
+      uriList.push("spotify:track:" + this.state.trackLikes[i]);
+    }
+    await this.apiPut(trackUrl, token, uriList);
+  };
+
   like = async () => {
+    const trackLikes =
+      !this.state.init && (await getData("returning"))
+        ? await getData("radioTracks")
+        : this.state.trackLikes;
+    const artistLikes =
+      !this.state.init && (await getData("returning"))
+        ? await getData("radioArtists")
+        : this.state.artistLikes;
     if (this.state.artistPlaying && this.state.likes >= 4) {
       Alert.alert("Upvoted Song - Updating Seed...");
-      const replace = this.state.artistLikes;
+      const replace = artistLikes;
       replace.unshift(this.state.artistPlaying);
+      const replaceTracks = trackLikes;
+      if (replaceTracks.length < 100) {
+        replaceTracks.push(this.state.trackPlaying);
+      } else {
+        console.log("Playlist at capacity (100)");
+      }
       const playlistId = await getData("playlistId");
       const mmId = await getData("mmPlaylist");
       const token = await getData("accessToken");
@@ -54,8 +114,7 @@ export default class SongPlayer extends React.Component {
         "create",
         replace
       );
-      const url =
-        "https://api.spotify.com/v1/playlists/" + mmId + "/tracks";
+      const url = "https://api.spotify.com/v1/playlists/" + mmId + "/tracks";
       const ids = [];
 
       for (let i = 0; i < playlist.length; i++) {
@@ -65,18 +124,40 @@ export default class SongPlayer extends React.Component {
         );
       }
       await setData("playlistData", playlist);
+      await setData("radioTracks", replaceTracks);
+      await setData("radioArtists", replace);
       await this.apiPut(url, token, ids);
-      this.setState({ artistLikes: replace, likes: 0 });
+      this.setState({
+        trackLikes: replaceTracks,
+        artistLikes: replace,
+        likes: 0,
+        playlist: null,
+        init: true
+      });
     } else if (this.state.artistPlaying) {
       Alert.alert("Upvoted Song");
-      const replace = this.state.artistLikes;
+      const replace = artistLikes;
       replace.unshift(this.state.artistPlaying);
-      this.setState({ artistLikes: replace, likes: this.state.likes + 1 });
+      const replaceTracks = trackLikes;
+      if (replaceTracks.length < 100) {
+        replaceTracks.push(this.state.trackPlaying);
+      } else {
+        console.log("Playlist at capacity (100)");
+      }
+      await setData("radioTracks", replaceTracks);
+      await setData("radioArtists", replace);
+      this.setState({
+        trackLikes: replaceTracks,
+        artistLikes: replace,
+        likes: this.state.likes + 1,
+        playlist: null,
+        init: true
+      });
     }
   };
 
   apiGetTrackImage = async token => {
-    let img = ["", "", ""];
+    let img = ["", "", "", ""];
     const response = await axios.get("https://api.spotify.com/v1/me/player", {
       headers: {
         Authorization: `Bearer ${token}`
@@ -92,6 +173,7 @@ export default class SongPlayer extends React.Component {
       img[0] = response.data.item.album.images[0].url;
       img[1] = response.data.item.name;
       img[2] = response.data.item.album.artists[0].id;
+      img[3] = response.data.item.id;
     }
     return img;
   };
@@ -120,6 +202,45 @@ export default class SongPlayer extends React.Component {
           "Content-Type": "application/json;charset=UTF-8",
           "Access-Control-Allow-Origin": "*"
         }
+      }
+    );
+  };
+
+  apiPutNew = async (url, token, name) => {
+    const jsonData = {
+      name: name,
+      public: true
+    };
+    return await axios.post(
+      url,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json;charset=UTF-8",
+          "Access-Control-Allow-Origin": "*"
+        },
+        data: jsonData,
+        dataType: "json"
+      }
+    );
+  };
+
+  apiPutTracks = async (url, token, trackIds) => {
+    const jsonData = {
+      uris: trackIds
+    };
+    return await axios.put(
+      url,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json;charset=UTF-8",
+          "Access-Control-Allow-Origin": "*"
+        },
+        data: jsonData,
+        dataType: "json"
       }
     );
   };
@@ -172,7 +293,8 @@ export default class SongPlayer extends React.Component {
         playing: true,
         current: trackimg[0],
         songName: trackimg[1],
-        artistPlaying: trackimg[2]
+        artistPlaying: trackimg[2],
+        trackPlaying: trackimg[3]
       });
     } catch (e) {
       Alert.alert("Please connect a spotify device");
@@ -197,12 +319,49 @@ export default class SongPlayer extends React.Component {
         playing: false,
         current: trackimg[0],
         songName: trackimg[1],
-        artistPlaying: trackimg[2]
+        artistPlaying: trackimg[2],
+        trackPlaying: trackimg[3]
       });
     } catch (e) {
       Alert.alert("Please connect a spotify device");
       console.log(e);
     }
+  };
+
+  activateLoadTracks = async () => {
+    const token = await getData("accessToken");
+    const trackLikes =
+      !this.state.init && (await getData("returning"))
+        ? await getData("radioTracks")
+        : this.state.trackLikes;
+    const artistLikes =
+      !this.state.init && (await getData("returning"))
+        ? await getData("radioArtists")
+        : this.state.artistLikes;
+    if (trackLikes.length == 0) {
+      return;
+    }
+    const songsUrl1 =
+      "https://api.spotify.com/v1/tracks/?ids=" +
+      trackLikes.slice(0, 50).join(",") +
+      "&market=from_token";
+    const response1 = await this._apiGet(songsUrl1, token);
+    const songs = [];
+    songs.push(...response1.data.tracks);
+    if (trackLikes.length > 50) {
+      const songsUrl2 =
+        "https://api.spotify.com/v1/tracks/?ids=" +
+        trackLikes.slice(50, 100).join(",") +
+        "&market=from_token";
+      const response2 = await this._apiGet(songsUrl2, token);
+      songs.push(...response2.data.tracks);
+    }
+    this.setState({
+      playlist: songs,
+      trackLikes: trackLikes,
+      artistLikes: artistLikes,
+      init: true
+    });
   };
 
   activatePlayHelper = async token => {
@@ -213,7 +372,8 @@ export default class SongPlayer extends React.Component {
         playing: true,
         current: img[0],
         songName: img[1],
-        artistPlaying: img[2]
+        artistPlaying: img[2],
+        trackPlaying: img[3]
       });
     } catch (e) {
       const img = await this.apiGetTrackImage(token);
@@ -222,7 +382,8 @@ export default class SongPlayer extends React.Component {
         playing: true,
         current: img[0],
         songName: img[1],
-        artistPlaying: img[2]
+        artistPlaying: img[2],
+        trackPlaying: img[3]
       });
       console.log(e);
     }
@@ -231,6 +392,7 @@ export default class SongPlayer extends React.Component {
   activatePlay = async () => {
     const token = await getData("accessToken");
     const id = await getData("mmPlaylist");
+    Keyboard.dismiss();
     try {
       const uri = await this.apiGetContextUri(token);
       if (
@@ -266,6 +428,7 @@ export default class SongPlayer extends React.Component {
 
   activatePause = async () => {
     const token = await getData("accessToken");
+    Keyboard.dismiss();
     try {
       const img = await this.apiGetTrackImage(token);
       await this.apiPutRegular(
@@ -276,7 +439,8 @@ export default class SongPlayer extends React.Component {
         playing: false,
         current: img[0],
         songName: img[1],
-        artistPlaying: img[2]
+        artistPlaying: img[2],
+        trackPlaying: img[3]
       });
     } catch (e) {
       Alert.alert("Please connect a spotify device");
@@ -294,6 +458,15 @@ export default class SongPlayer extends React.Component {
         }}
       >
         <Mytext text={"Song Navigation"} />
+        <Mytextinput
+          placeholder="Enter Name"
+          style={{ padding: 10 }}
+          onChangeText={playlistName => this.setState({ playlistName })}
+        />
+        <ButtonOne
+          title="Create Playlist"
+          customClick={this.createNewPlaylist}
+        />
         <ButtonOne title="LIKE" customClick={this.like} />
         <View
           style={{
@@ -322,10 +495,10 @@ export default class SongPlayer extends React.Component {
           {this.state.current ? (
             <Image
               style={{
-                height: 225,
-                width: 225,
+                height: 125,
+                width: 125,
                 marginBottom: 32,
-                marginTop: 100
+                marginTop: 50
               }}
               source={
                 this.state.current ? { uri: this.state.current } : { uri: "" }
@@ -333,6 +506,77 @@ export default class SongPlayer extends React.Component {
             />
           ) : null}
           <Mytext text={this.state.songName ? this.state.songName : ""} />
+          {this.state.playlist ? (
+            <Text
+              style={{
+                color: "white",
+                fontWeight: "bold",
+                marginBottom: 10
+              }}
+            >
+              {this.state.trackLikes.length} songs
+            </Text>
+          ) : null}
+          {this.state.playlist ? (
+            <FlatList
+              data={this.state.playlist}
+              ItemSeparatorComponent={null}
+              keyExtractor={(_, index) => index.toString()}
+              renderItem={({ item }) => (
+                <View
+                  key={item.id}
+                  style={{
+                    flex: 1,
+                    backgroundColor: "black",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    padding: 5
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontWeight: "bold",
+                      marginBottom: 10
+                    }}
+                  >
+                    {item.name}
+                  </Text>
+                  <Image
+                    style={styles.profileImage}
+                    source={{
+                      uri: item.album.images[0]
+                        ? item.album.images[0].url
+                        : this.state.userInfo.images[0].url
+                    }}
+                  />
+                  <TouchableOpacity
+                    style={styles.listButton}
+                    onPress={async () => {
+                      const resetTrack = this.state.trackLikes.filter(x =>
+                        x != item.id ? x : null
+                      );
+                      const resetPlay = this.state.playlist.filter(x =>
+                        x.id != item.id ? x : null
+                      );
+                      await setData("radioTracks", resetTrack);
+                      this.setState({
+                        trackLikes: resetTrack,
+                        playlist: resetPlay
+                      });
+                    }}
+                  >
+                    <Text style={styles.buttonText}>Remove</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
+          ) : (
+            <ButtonOne
+              title="Load Liked Tracks"
+              customClick={this.activateLoadTracks}
+            />
+          )}
         </View>
       </View>
     );
