@@ -42,14 +42,6 @@ export default class SongPlayer extends React.Component {
     };
   }
 
-  toggleSwitch = async () => {
-    const url =
-      "https://api.spotify.com/v1/me/player/shuffle?state=" +
-      !this.state.shuffle;
-    const token = await getData("accessToken");
-    await this.apiPutRegular(url, token);
-    this.setState({ shuffle: !this.state.shuffle });
-  };
 
   /**
    * Requests information based on url and gives a response
@@ -82,93 +74,6 @@ export default class SongPlayer extends React.Component {
         dataType: "json"
       }
     );
-  };
-
-  createNewPlaylist = async () => {
-    Keyboard.dismiss();
-    const name = this.state.playlistName;
-    Alert.alert("Created Playlist: " + name);
-    const token = await getData("accessToken");
-    const userId = await getData("userId");
-    const playlistUrl =
-      "https://api.spotify.com/v1/users/" + userId + "/playlists";
-    const response = await this.apiPutNew(playlistUrl, token, name);
-    const trackUrl =
-      "https://api.spotify.com/v1/playlists/" + response.data.id + "/tracks";
-    const uriList = [];
-    for (let i = 0; i < this.state.trackLikes.length; i++) {
-      uriList.push("spotify:track:" + this.state.trackLikes[i]);
-    }
-    await this.apiPut(trackUrl, token, uriList);
-  };
-
-  like = async () => {
-    const trackLikes =
-      !this.state.init && (await getData("returning"))
-        ? await getData("radioTracks")
-        : this.state.trackLikes;
-    const artistLikes =
-      !this.state.init && (await getData("returning"))
-        ? await getData("radioArtists")
-        : this.state.artistLikes;
-    if (this.state.artistPlaying && this.state.likes >= 4) {
-      Alert.alert("Upvoted Song - Updating Seed...");
-      const replace = artistLikes;
-      replace.unshift(this.state.artistPlaying);
-      const replaceTracks = trackLikes;
-      if (replaceTracks.length < 100) {
-        replaceTracks.push(this.state.trackPlaying);
-      } else {
-        console.log("Playlist at capacity (100)");
-      }
-      const playlistId = await getData("playlistId");
-      const mmId = await getData("mmPlaylist");
-      const token = await getData("accessToken");
-      const stats = await getData("Stats");
-      const playlist = await new SongEngine(stats, playlistId, token).algorithm(
-        "create",
-        replace
-      );
-      const url = "https://api.spotify.com/v1/playlists/" + mmId + "/tracks";
-      const ids = [];
-
-      for (let i = 0; i < playlist.length; i++) {
-        ids.push(
-          "spotify:track:" +
-            (playlist[i]["track"] ? playlist[i].track.id : playlist[i].id)
-        );
-      }
-      await setData("playlistData", playlist);
-      await setData("radioTracks", replaceTracks);
-      await setData("radioArtists", replace);
-      await this.apiPut(url, token, ids);
-      this.setState({
-        trackLikes: replaceTracks,
-        artistLikes: replace,
-        likes: 0,
-        playlist: null,
-        init: true
-      });
-    } else if (this.state.artistPlaying) {
-      Alert.alert("Upvoted Song");
-      const replace = artistLikes;
-      replace.unshift(this.state.artistPlaying);
-      const replaceTracks = trackLikes;
-      if (replaceTracks.length < 100) {
-        replaceTracks.push(this.state.trackPlaying);
-      } else {
-        console.log("Playlist at capacity (100)");
-      }
-      await setData("radioTracks", replaceTracks);
-      await setData("radioArtists", replace);
-      this.setState({
-        trackLikes: replaceTracks,
-        artistLikes: replace,
-        likes: this.state.likes + 1,
-        playlist: null,
-        init: true
-      });
-    }
   };
 
   apiGetTrackImage = async token => {
@@ -296,6 +201,129 @@ export default class SongPlayer extends React.Component {
     );
   };
 
+  toggleSwitch = async () => {
+    const url =
+      "https://api.spotify.com/v1/me/player/shuffle?state=" +
+      !this.state.shuffle;
+    const token = await getData("accessToken");
+    try {
+      await this.apiPutRegular(url, token);
+    } catch(e) {
+      if (e.response.data.error.status == 401) {
+        this.props.navigation.navigate("SpotifyLogin");
+      } else {
+        Alert.alert("Please connect a spotify device");
+      }
+      console.log(e);
+    }
+    this.setState({ shuffle: !this.state.shuffle });
+  };
+
+  createNewPlaylist = async () => {
+    Keyboard.dismiss();
+    const name = this.state.playlistName;
+    const token = await getData("accessToken");
+    const userId = await getData("userId");
+    const playlistUrl =
+      "https://api.spotify.com/v1/users/" + userId + "/playlists";
+    try {
+      const response = await this.apiPutNew(playlistUrl, token, name);
+      Alert.alert("Created Playlist: " + name);
+      const trackUrl =
+        "https://api.spotify.com/v1/playlists/" + response.data.id + "/tracks";
+      const uriList = [];
+      for (let i = 0; i < this.state.trackLikes.length; i++) {
+        uriList.push("spotify:track:" + this.state.trackLikes[i]);
+      }
+      await this.apiPut(trackUrl, token, uriList);
+    } catch(e) {
+      if (e.response.data.error.status == 401) {
+        this.props.navigation.navigate("SpotifyLogin");
+      } else {
+        Alert.alert("Please connect a spotify device");
+      }
+      console.log(e);
+    }
+  };
+
+  like = async () => {
+    const trackLikes =
+      !this.state.init && (await getData("returning"))
+        ? await getData("radioTracks")
+        : this.state.trackLikes;
+    const artistLikes =
+      !this.state.init && (await getData("returning"))
+        ? await getData("radioArtists")
+        : this.state.artistLikes;
+    try {
+      if (this.state.artistPlaying && this.state.likes >= 4) {
+        Alert.alert("Upvoted Song - Updating Seed...");
+        const replace = artistLikes;
+        replace.unshift(this.state.artistPlaying);
+        const replaceTracks = trackLikes;
+        if (replaceTracks.length < 100) {
+          replaceTracks.push(this.state.trackPlaying);
+        } else {
+          console.log("Playlist at capacity (100)");
+        }
+        const playlistId = await getData("playlistId");
+        const mmId = await getData("mmPlaylist");
+        const token = await getData("accessToken");
+        const stats = await getData("Stats");
+        const playlist = await new SongEngine(stats, playlistId, token).algorithm(
+          "create",
+          replace
+        );
+        const url = "https://api.spotify.com/v1/playlists/" + mmId + "/tracks";
+        const ids = [];
+
+        for (let i = 0; i < playlist.length; i++) {
+          ids.push(
+            "spotify:track:" +
+              (playlist[i]["track"] ? playlist[i].track.id : playlist[i].id)
+          );
+        }
+        await setData("playlistData", playlist);
+        await setData("radioTracks", replaceTracks);
+        await setData("radioArtists", replace);
+        await this.apiPut(url, token, ids);
+        this.setState({
+          trackLikes: replaceTracks,
+          artistLikes: replace,
+          likes: 0,
+          playlist: null,
+          init: true
+        });
+      } else if (this.state.artistPlaying) {
+        Alert.alert("Upvoted Song");
+        const replace = artistLikes;
+        replace.unshift(this.state.artistPlaying);
+        const replaceTracks = trackLikes;
+        if (replaceTracks.length < 100) {
+          replaceTracks.push(this.state.trackPlaying);
+        } else {
+          console.log("Playlist at capacity (100)");
+        }
+        await setData("radioTracks", replaceTracks);
+        await setData("radioArtists", replace);
+        this.setState({
+          trackLikes: replaceTracks,
+          artistLikes: replace,
+          likes: this.state.likes + 1,
+          playlist: null,
+          init: true
+        });
+      }
+    } catch(e) {
+      if (e.response.data.error.status == 401) {
+        this.props.navigation.navigate("SpotifyLogin");
+      } else {
+        Alert.alert("Please connect a spotify device");
+      }
+      console.log(e);
+    }
+  };
+
   activateNext = async () => {
     const token = await getData("accessToken");
     try {
@@ -315,8 +343,12 @@ export default class SongPlayer extends React.Component {
         trackDuration: trackimg[4],
         tPos: 0
       });
-    } catch (e) {
-      Alert.alert("Please connect a spotify device");
+    } catch(e) {
+      if (e.response.data.error.status == 401) {
+        this.props.navigation.navigate("SpotifyLogin");
+      } else {
+        Alert.alert("Please connect a spotify device");
+      }
       console.log(e);
     }
   };
@@ -343,8 +375,12 @@ export default class SongPlayer extends React.Component {
         trackDuration: trackimg[4],
         tPos: 0
       });
-    } catch (e) {
-      Alert.alert("Please connect a spotify device");
+    } catch(e) {
+      if (e.response.data.error.status == 401) {
+        this.props.navigation.navigate("SpotifyLogin");
+      } else {
+        Alert.alert("Please connect a spotify device");
+      }
       console.log(e);
     }
   };
@@ -366,23 +402,32 @@ export default class SongPlayer extends React.Component {
       "https://api.spotify.com/v1/tracks/?ids=" +
       trackLikes.slice(0, 50).join(",") +
       "&market=from_token";
-    const response1 = await this._apiGet(songsUrl1, token);
-    const songs = [];
-    songs.push(...response1.data.tracks);
-    if (trackLikes.length > 50) {
-      const songsUrl2 =
-        "https://api.spotify.com/v1/tracks/?ids=" +
-        trackLikes.slice(50, 100).join(",") +
-        "&market=from_token";
-      const response2 = await this._apiGet(songsUrl2, token);
-      songs.push(...response2.data.tracks);
+    try {
+      const response1 = await this._apiGet(songsUrl1, token);
+      const songs = [];
+      songs.push(...response1.data.tracks);
+      if (trackLikes.length > 50) {
+        const songsUrl2 =
+          "https://api.spotify.com/v1/tracks/?ids=" +
+          trackLikes.slice(50, 100).join(",") +
+          "&market=from_token";
+        const response2 = await this._apiGet(songsUrl2, token);
+        songs.push(...response2.data.tracks);
+      }
+      this.setState({
+        playlist: songs,
+        trackLikes: trackLikes,
+        artistLikes: artistLikes,
+        init: true
+      });
+    } catch(e) {
+    if (e.response.data.error.status == 401) {
+      this.props.navigation.navigate("SpotifyLogin");
+    } else {
+      Alert.alert("Please connect a spotify device");
     }
-    this.setState({
-      playlist: songs,
-      trackLikes: trackLikes,
-      artistLikes: artistLikes,
-      init: true
-    });
+    console.log(e);
+  }
   };
 
   activatePlayHelper = async token => {
@@ -398,7 +443,12 @@ export default class SongPlayer extends React.Component {
         trackDuration: img[4],
         tPos: img[5]
       });
-    } catch (e) {
+    } catch(e) {
+      if (e.response.data.error.status == 401) {
+        this.props.navigation.navigate("SpotifyLogin");
+      } else {
+        Alert.alert("Please connect a spotify device");
+      }
       const img = await this.apiGetTrackImage(token);
       this.setState({
         navigated: true,
@@ -422,8 +472,7 @@ export default class SongPlayer extends React.Component {
       const uri = await this.apiGetContextUri(token);
       if (
         (this.state.navigated &&
-          uri === "spotify:user:12168726728:playlist:" + id) ||
-        uri === "spotify:user:12168726728:playlist:" + id
+          uri === "spotify:user:12168726728:playlist:" + id)
       ) {
         await this.apiPutRegular(
           "https://api.spotify.com/v1/me/player/play",
@@ -442,11 +491,19 @@ export default class SongPlayer extends React.Component {
             token
           );
           await this.activatePlayHelper(token);
-        } catch (_) {
+        } catch(e) {
+          if (e.response.data.error.status == 401) {
+            this.props.navigation.navigate("SpotifyLogin");
+          }
           await this.activatePlayHelper(token);
         }
       }
-    } catch (e) {
+    } catch(e) {
+      if (e.response.data.error.status == 401) {
+        this.props.navigation.navigate("SpotifyLogin");
+      } else {
+        Alert.alert("Please connect a spotify device");
+      }
       console.log(e);
     }
   };
@@ -469,8 +526,12 @@ export default class SongPlayer extends React.Component {
         trackDuration: img[4],
         tPos: img[5]
       });
-    } catch (e) {
-      Alert.alert("Please connect a spotify device");
+    } catch(e) {
+      if (e.response.data.error.status == 401) {
+        this.props.navigation.navigate("SpotifyLogin");
+      } else {
+        Alert.alert("Please connect a spotify device");
+      }
       console.log(e);
     }
   };
@@ -545,8 +606,12 @@ export default class SongPlayer extends React.Component {
             <Slider
               style={{ width: 320, height: 40 }}
               minimumValue={0}
-              value={Math.round(this.state.tPos / 1000)}
-              maximumValue={Math.round(this.state.trackDuration / 1000)}
+              value={this.state.tPos? Math.round(this.state.tPos / 1000) : 0}
+              maximumValue={Math.round(
+                this.state.trackDuration / 1000) > 0
+                ? Math.round(this.state.trackDuration / 1000)
+                : 1000
+              }
               disabled={this.state.trackPlaying ? false : true}
               minimumTrackTintColor="#FFFFFF"
               maximumTrackTintColor="#000000"

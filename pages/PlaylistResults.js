@@ -57,19 +57,28 @@ export default class PlaylistResults extends React.Component {
     const playlist = await getData("playlistData");
     const playlistId = await getData("mmPlaylist");
 
-    if (playlistId && playlist) {
-      const url =
-        "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
-      const ids = [];
-      for (let i = 0; i < playlist.length; i++) {
-        ids.push(
-          "spotify:track:" +
-            (playlist[i]["track"] ? playlist[i].track.id : playlist[i].id)
-        );
+    try {
+      if (playlistId && playlist) {
+        const url =
+          "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
+        const ids = [];
+        for (let i = 0; i < playlist.length; i++) {
+          ids.push(
+            "spotify:track:" +
+              (playlist[i]["track"] ? playlist[i].track.id : playlist[i].id)
+          );
+        }
+        await this.apiPut(url, token, ids);
       }
-      await this.apiPut(url, token, ids);
-    }
-    this.setState({ userInfo: data, token: token, playlist: playlist });
+      this.setState({ userInfo: data, token: token, playlist: playlist });
+    } catch (e) {
+      if (e.response.data.error.status == 401) {
+        this.props.navigation.navigate("SpotifyLogin");
+      } else {
+        Alert.alert("Please connect a spotify device");
+      }
+      console.log(e);
+    } 
   };
 
   nav = async () => {

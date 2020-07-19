@@ -1,4 +1,5 @@
 import React from "react";
+import axios from "axios";
 import { StyleSheet, TouchableOpacity, Text, View, Switch } from "react-native";
 import { StackActions } from "@react-navigation/native";
 import Slider from "@react-native-community/slider";
@@ -25,6 +26,21 @@ export default class PlaylistCreator extends React.Component {
     };
   }
 
+  /**
+   * Requests information based on url and gives a response
+   *
+   * @param url - the url of the spotify api with a given endpoint
+   * @param token - the authorization token to pass to the api
+   * @returns - a json object being the api response, or null
+   */
+  apiGet = async (url, token) => {
+    return await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  };
+
   toggleSwitch = () => {
     this.setState({ isEnabled: !this.state.isEnabled });
   };
@@ -39,24 +55,37 @@ export default class PlaylistCreator extends React.Component {
 
   activateAlgorithm = async which => {
     const that = this;
-    if (which !== "returning") {
-      this.setState({ creating: true });
-      await setData("Stats", this.state);
-      const id = await getData("playlistId");
+    try {
       const token = await getData("accessToken");
-      const songs = await new SongEngine(this.state, id, token).algorithm(
-        which,
-        null
+      await this.apiGet(
+        `https://api.spotify.com/v1/me`,
+        token
       );
-      await setData("playlistData", songs);
-      await setData("returning", that.state.init);
-      that.state.init ? null : await setData("radioTracks", []);
-      this.props.navigation.navigate("PlaylistResults");
-      this.setState({ creating: false, init: true });
-    } else {
-      await setData("Stats", that.state);
-      await setData("returning", that.state.init);
-      this.props.navigation.navigate("PlaylistResults");
+      if (which !== "returning") {
+        this.setState({ creating: true });
+        await setData("Stats", this.state);
+        const id = await getData("playlistId");
+        const songs = await new SongEngine(this.state, id, token).algorithm(
+          which,
+          null
+        );
+        await setData("playlistData", songs);
+        await setData("returning", that.state.init);
+        that.state.init ? null : await setData("radioTracks", []);
+        this.props.navigation.navigate("PlaylistResults");
+        this.setState({ creating: false, init: true });
+      } else {
+        await setData("Stats", that.state);
+        await setData("returning", that.state.init);
+        this.props.navigation.navigate("PlaylistResults");
+      }
+    } catch (e) {
+      if (e.response.data.error.status == 401) {
+        this.props.navigation.navigate("SpotifyLogin");
+      } else {
+        Alert.alert("Please connect a spotify device");
+      }
+      console.log(e);
     }
   };
 
