@@ -282,7 +282,7 @@ export default class SongPlayer extends React.Component {
           stats,
           playlistId,
           token,
-          this.state.seenSongs
+          this.state.seenTracks
         ).algorithm("create", replace);
         const url = "https://api.spotify.com/v1/playlists/" + mmId + "/tracks";
         const ids = [];
