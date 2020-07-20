@@ -51,8 +51,14 @@ export default class SpotifyLogin extends React.Component {
    */
   handleSpotifyLogin = async () => {
     const scopes = [
-      'user-read-email','user-library-modify','user-read-currently-playing','user-read-playback-state','user-modify-playback-state',
-      'playlist-modify-private','playlist-modify-public','user-library-read'
+      "user-read-email",
+      "user-library-modify",
+      "user-read-currently-playing",
+      "user-read-playback-state",
+      "user-modify-playback-state",
+      "playlist-modify-private",
+      "playlist-modify-public",
+      "user-library-read"
     ];
     const redirectUrl = AuthSession.getRedirectUrl();
     const results = await AuthSession.startAsync({
@@ -73,10 +79,15 @@ export default class SpotifyLogin extends React.Component {
       await setData("userData", userInfo.data);
       await setData("userId", userInfo.data.id);
       await setData("accessToken", results.params.access_token);
-      this.setState({
-        userInfo: userInfo.data,
-        token: results.params.access_token
-      });
+      const routeName = this.props.route.params.routeName;
+      if (routeName === "HomeScreenTwo")
+        this.setState({
+          userInfo: userInfo.data,
+          token: results.params.access_token
+        });
+      else {
+        this.props.navigation.dispatch(StackActions.pop());
+      }
     }
   };
 
@@ -131,14 +142,18 @@ export default class SpotifyLogin extends React.Component {
           </TouchableOpacity>
         )}
 
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() =>
-                this.props.navigation.dispatch(StackActions.replace("HomeScreenTwo"))
-              }
-            >
-              <Text style={styles.buttonText}>Back to Home</Text>
-            </TouchableOpacity>
+        {this.props.route.params.routeName === "HomeScreenTwo" ? (
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() =>
+              this.props.navigation.dispatch(
+                StackActions.replace("HomeScreenTwo")
+              )
+            }
+          >
+            <Text style={styles.buttonText}>Back to Home</Text>
+          </TouchableOpacity>
+        ) : null}
 
         {this.state.didError
           ? this.displayError()
@@ -151,10 +166,7 @@ export default class SpotifyLogin extends React.Component {
             <Text style={styles.buttonText}>Continue</Text>
           </TouchableOpacity>
         ) : null}
-        
       </View>
     );
   }
 }
-
-

@@ -46,7 +46,11 @@ export default class HomeScreenTwo extends React.Component {
       this.props.navigation.dispatch(StackActions.replace("MoodHome"));
     } catch (_) {
       console.log("Token expired. Navigating to authentication.");
-      this.props.navigation.dispatch(StackActions.replace("SpotifyLogin"));
+      this.props.navigation.dispatch(
+        StackActions.replace("SpotifyLogin", {
+          routeName: "HomeScreenTwo"
+        })
+      );
     }
   };
 

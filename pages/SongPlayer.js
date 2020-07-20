@@ -19,29 +19,31 @@ import Mytextinput from "../components/Mytextinput.js";
 import { PlayerButton } from "../components/MyButtons.js";
 import { Mytext } from "../components/Mytext.js";
 import SongEngine from "../SongEngine.js";
+import { StackActions } from "@react-navigation/native";
 
 export default class SongPlayer extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      navigated: false,
-      playing: false,
-      current: null,
-      playlist: null,
-      reload: false,
-      init: false,
-      playlistName: "",
-      likes: 0,
-      artistPlaying: null,
-      trackPlaying: null,
-      artistLikes: [],
-      trackLikes: [],
-      trackDuration: 1000,
-      tPos: 0,
-      shuffle: false
-    };
+    (this.initSeen = false),
+      (this.state = {
+        navigated: false,
+        playing: false,
+        current: null,
+        playlist: null,
+        reload: false,
+        init: false,
+        playlistName: "",
+        likes: 0,
+        artistPlaying: null,
+        trackPlaying: null,
+        artistLikes: [],
+        trackLikes: [],
+        seenTracks: {},
+        trackDuration: 1000,
+        tPos: 0,
+        shuffle: false
+      });
   }
-
 
   /**
    * Requests information based on url and gives a response
@@ -208,9 +210,13 @@ export default class SongPlayer extends React.Component {
     const token = await getData("accessToken");
     try {
       await this.apiPutRegular(url, token);
-    } catch(e) {
+    } catch (e) {
       if (e.response.data.error.status == 401) {
-        this.props.navigation.navigate("SpotifyLogin");
+        this.props.navigation.dispatch(
+          StackActions.push("SpotifyLogin", {
+            routeName: ""
+          })
+        );
       } else {
         Alert.alert("Please connect a spotify device");
       }
@@ -236,9 +242,13 @@ export default class SongPlayer extends React.Component {
         uriList.push("spotify:track:" + this.state.trackLikes[i]);
       }
       await this.apiPut(trackUrl, token, uriList);
-    } catch(e) {
+    } catch (e) {
       if (e.response.data.error.status == 401) {
-        this.props.navigation.navigate("SpotifyLogin");
+        this.props.navigation.dispatch(
+          StackActions.push("SpotifyLogin", {
+            routeName: ""
+          })
+        );
       } else {
         Alert.alert("Please connect a spotify device");
       }
@@ -247,14 +257,12 @@ export default class SongPlayer extends React.Component {
   };
 
   like = async () => {
-    const trackLikes =
-      !this.state.init && (await getData("returning"))
-        ? await getData("radioTracks")
-        : this.state.trackLikes;
-    const artistLikes =
-      !this.state.init && (await getData("returning"))
-        ? await getData("radioArtists")
-        : this.state.artistLikes;
+    const trackLikes = !this.state.init
+      ? await getData("radioTracks")
+      : this.state.trackLikes;
+    const artistLikes = !this.state.init
+      ? await getData("radioArtists")
+      : this.state.artistLikes;
     try {
       if (this.state.artistPlaying && this.state.likes >= 4) {
         Alert.alert("Upvoted Song - Updating Seed...");
@@ -270,10 +278,12 @@ export default class SongPlayer extends React.Component {
         const mmId = await getData("mmPlaylist");
         const token = await getData("accessToken");
         const stats = await getData("Stats");
-        const playlist = await new SongEngine(stats, playlistId, token).algorithm(
-          "create",
-          replace
-        );
+        const playlist = await new SongEngine(
+          stats,
+          playlistId,
+          token,
+          this.state.seenSongs
+        ).algorithm("create", replace);
         const url = "https://api.spotify.com/v1/playlists/" + mmId + "/tracks";
         const ids = [];
 
@@ -314,9 +324,13 @@ export default class SongPlayer extends React.Component {
           init: true
         });
       }
-    } catch(e) {
+    } catch (e) {
       if (e.response.data.error.status == 401) {
-        this.props.navigation.navigate("SpotifyLogin");
+        this.props.navigation.dispatch(
+          StackActions.push("SpotifyLogin", {
+            routeName: ""
+          })
+        );
       } else {
         Alert.alert("Please connect a spotify device");
       }
@@ -334,6 +348,12 @@ export default class SongPlayer extends React.Component {
         trackimg = await this.apiGetTrackImage(token);
         urlTracker = trackimg[0];
       }
+      const seen = this.initSeen
+        ? this.state.seenTracks
+        : await getData("seenTracks");
+      this.initSeen = true;
+      seen[trackimg[3]] = true;
+      await setData("seenTracks", seen);
       this.setState({
         playing: true,
         current: trackimg[0],
@@ -341,11 +361,16 @@ export default class SongPlayer extends React.Component {
         artistPlaying: trackimg[2],
         trackPlaying: trackimg[3],
         trackDuration: trackimg[4],
+        seenTracks: seen,
         tPos: 0
       });
-    } catch(e) {
+    } catch (e) {
       if (e.response.data.error.status == 401) {
-        this.props.navigation.navigate("SpotifyLogin");
+        this.props.navigation.dispatch(
+          StackActions.push("SpotifyLogin", {
+            routeName: ""
+          })
+        );
       } else {
         Alert.alert("Please connect a spotify device");
       }
@@ -366,18 +391,29 @@ export default class SongPlayer extends React.Component {
         trackimg = await this.apiGetTrackImage(token);
         urlTracker = trackimg[0];
       }
+      const seen = this.initSeen
+        ? this.state.seenTracks
+        : await getData("seenTracks");
+      this.initSeen = true;
+      seen[trackimg[3]] = true;
+      await setData("seenTracks", seen);
       this.setState({
         playing: true,
         current: trackimg[0],
         songName: trackimg[1],
         artistPlaying: trackimg[2],
         trackPlaying: trackimg[3],
+        seenTracks: seen,
         trackDuration: trackimg[4],
         tPos: 0
       });
-    } catch(e) {
+    } catch (e) {
       if (e.response.data.error.status == 401) {
-        this.props.navigation.navigate("SpotifyLogin");
+        this.props.navigation.dispatch(
+          StackActions.push("SpotifyLogin", {
+            routeName: ""
+          })
+        );
       } else {
         Alert.alert("Please connect a spotify device");
       }
@@ -420,19 +456,29 @@ export default class SongPlayer extends React.Component {
         artistLikes: artistLikes,
         init: true
       });
-    } catch(e) {
-    if (e.response.data.error.status == 401) {
-      this.props.navigation.navigate("SpotifyLogin");
-    } else {
-      Alert.alert("Please connect a spotify device");
+    } catch (e) {
+      if (e.response.data.error.status == 401) {
+        this.props.navigation.dispatch(
+          StackActions.push("SpotifyLogin", {
+            routeName: ""
+          })
+        );
+      } else {
+        Alert.alert("Please connect a spotify device");
+      }
+      console.log(e);
     }
-    console.log(e);
-  }
   };
 
   activatePlayHelper = async token => {
     try {
       const img = await this.apiGetTrackImage(token);
+      const seen = this.initSeen
+        ? this.state.seenTracks
+        : await getData("seenTracks");
+      this.initSeen = true;
+      seen[img[3]] = true;
+      await setData("seenTracks", seen);
       this.setState({
         navigated: true,
         playing: true,
@@ -440,16 +486,27 @@ export default class SongPlayer extends React.Component {
         songName: img[1],
         artistPlaying: img[2],
         trackPlaying: img[3],
+        seenTracks: seen,
         trackDuration: img[4],
         tPos: img[5]
       });
-    } catch(e) {
+    } catch (e) {
       if (e.response.data.error.status == 401) {
-        this.props.navigation.navigate("SpotifyLogin");
+        this.props.navigation.dispatch(
+          StackActions.push("SpotifyLogin", {
+            routeName: ""
+          })
+        );
       } else {
         Alert.alert("Please connect a spotify device");
       }
       const img = await this.apiGetTrackImage(token);
+      const seen = this.initSeen
+        ? this.state.seenTracks
+        : await getData("seenTracks");
+      this.initSeen = true;
+      seen[img[3]] = true;
+      await setData("seenTracks", seen);
       this.setState({
         navigated: true,
         playing: true,
@@ -457,6 +514,7 @@ export default class SongPlayer extends React.Component {
         songName: img[1],
         artistPlaying: img[2],
         trackPlaying: img[3],
+        seenTracks: seen,
         trackDuration: img[4],
         tPos: img[5]
       });
@@ -471,8 +529,8 @@ export default class SongPlayer extends React.Component {
     try {
       const uri = await this.apiGetContextUri(token);
       if (
-        (this.state.navigated &&
-          uri === "spotify:user:12168726728:playlist:" + id)
+        this.state.navigated ||
+        uri === "spotify:user:12168726728:playlist:" + id
       ) {
         await this.apiPutRegular(
           "https://api.spotify.com/v1/me/player/play",
@@ -491,16 +549,20 @@ export default class SongPlayer extends React.Component {
             token
           );
           await this.activatePlayHelper(token);
-        } catch(e) {
+        } catch (e) {
           if (e.response.data.error.status == 401) {
             this.props.navigation.navigate("SpotifyLogin");
           }
           await this.activatePlayHelper(token);
         }
       }
-    } catch(e) {
+    } catch (e) {
       if (e.response.data.error.status == 401) {
-        this.props.navigation.navigate("SpotifyLogin");
+        this.props.navigation.dispatch(
+          StackActions.push("SpotifyLogin", {
+            routeName: ""
+          })
+        );
       } else {
         Alert.alert("Please connect a spotify device");
       }
@@ -517,18 +579,29 @@ export default class SongPlayer extends React.Component {
         "https://api.spotify.com/v1/me/player/pause",
         token
       );
+      const seen = this.initSeen
+        ? this.state.seenTracks
+        : await getData("seenTracks");
+      this.initSeen = true;
+      seen[img[3]] = true;
+      await setData("seenTracks", seen);
       this.setState({
         playing: false,
         current: img[0],
         songName: img[1],
         artistPlaying: img[2],
         trackPlaying: img[3],
+        seenTracks: seen,
         trackDuration: img[4],
         tPos: img[5]
       });
-    } catch(e) {
+    } catch (e) {
       if (e.response.data.error.status == 401) {
-        this.props.navigation.navigate("SpotifyLogin");
+        this.props.navigation.dispatch(
+          StackActions.push("SpotifyLogin", {
+            routeName: ""
+          })
+        );
       } else {
         Alert.alert("Please connect a spotify device");
       }
@@ -606,11 +679,11 @@ export default class SongPlayer extends React.Component {
             <Slider
               style={{ width: 320, height: 40 }}
               minimumValue={0}
-              value={this.state.tPos? Math.round(this.state.tPos / 1000) : 0}
-              maximumValue={Math.round(
-                this.state.trackDuration / 1000) > 0
-                ? Math.round(this.state.trackDuration / 1000)
-                : 1000
+              value={this.state.tPos ? Math.round(this.state.tPos / 1000) : 0}
+              maximumValue={
+                Math.round(this.state.trackDuration / 1000) > 0
+                  ? Math.round(this.state.trackDuration / 1000)
+                  : 1000
               }
               disabled={this.state.trackPlaying ? false : true}
               minimumTrackTintColor="#FFFFFF"

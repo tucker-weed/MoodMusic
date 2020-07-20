@@ -8,10 +8,11 @@ import axios from "axios";
  * @param token - user authenticated access token for API requests
  */
 export default class SongEngine {
-  constructor(state, playlistId, token) {
+  constructor(state, playlistId, token, seenSongs) {
     this.playlistId = playlistId;
     this.token = token;
     this.state = state;
+    this.seenSongs = seenSongs;
     /**
      * LIMIT: a number, the spotify API limit on POST data length.
      * RESTRICTED TO: less than or equal to 100.
@@ -107,7 +108,8 @@ export default class SongEngine {
         features[j].tempo > this.state.tempo &&
         euphoria > Math.abs(this.state.euphoria) &&
         hype > Math.abs(this.state.hype) &&
-        (!this.state.isEnabled || features[j].key == this.state.key);
+        (!this.state.isEnabled || features[j].key == this.state.key) &&
+        !this.seenSongs[features[j].id];
       const pop = this.state.sPopularity;
 
       if (filteredValuesCheck) {

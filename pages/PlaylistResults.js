@@ -3,7 +3,8 @@ import { FlatList, TouchableOpacity, Text, View, Image } from "react-native";
 import axios from "axios";
 
 import { styles } from "../Styles.js";
-import { setData, getData } from "../LocalStorage.js";
+import { getData } from "../LocalStorage.js";
+import { StackActions } from "@react-navigation/native";
 import { Mytext } from "../components/Mytext.js";
 
 export default class PlaylistResults extends React.Component {
@@ -73,28 +74,26 @@ export default class PlaylistResults extends React.Component {
       this.setState({ userInfo: data, token: token, playlist: playlist });
     } catch (e) {
       if (e.response.data.error.status == 401) {
-        this.props.navigation.navigate("SpotifyLogin");
+        this.props.navigation.dispatch(
+          StackActions.push("SpotifyLogin", {
+            routeName: ""
+          })
+        );
       } else {
         Alert.alert("Please connect a spotify device");
       }
       console.log(e);
-    } 
+    }
   };
 
   nav = async () => {
-    const that = this;
     this.setState({
       userInfo: null,
       token: null,
       playlist: null,
       returning: true
     });
-    if (that.state.returning) {
-      await setData("returning", true);
-      this.props.navigation.navigate("SongPlayer");
-    } else {
-      this.props.navigation.navigate("SongPlayer");
-    }
+    this.props.navigation.navigate("SongPlayer");
   };
 
   render() {

@@ -27,7 +27,7 @@ export default class MoodHome extends React.Component {
     return await axios.get(url, {
       headers: {
         Authorization: `Bearer ${token}`
-      },
+      }
     });
   };
 
@@ -62,28 +62,42 @@ export default class MoodHome extends React.Component {
       ? this.state.cacheId
       : await getData("mmPlaylist");
 
-    if (!cacheId) {
-      const url = "https://api.spotify.com/v1/users/" + data.id + "/playlists";
-      const response = await this.apiPost(url, access);
-      await setData("mmPlaylist", response.data.id);
-    }
-
-    const url = "https://api.spotify.com/v1/users/" + data.id + "/playlists";
-    const response = await this.apiGet(url, access);
-
-    if (response) {
-      if (this.userInfo && this.token) {
-        this.setState({ playlists: response.data.items });
-      } else {
-        this.setState({
-          playlists: response.data.items,
-          userInfo: data,
-          token: access
-        });
+    try {
+      if (!cacheId) {
+        const url =
+          "https://api.spotify.com/v1/users/" + data.id + "/playlists";
+        const response = await this.apiPost(url, access);
+        await setData("mmPlaylist", response.data.id);
       }
-    } else {
-      console.log("ERROR: token expired");
-      this.setState({ userInfo: null, token: null, playlists: null });
+
+      const url = "https://api.spotify.com/v1/users/" + data.id + "/playlists";
+      const response = await this.apiGet(url, access);
+
+      if (response) {
+        if (this.userInfo && this.token) {
+          this.setState({ playlists: response.data.items });
+        } else {
+          this.setState({
+            playlists: response.data.items,
+            userInfo: data,
+            token: access
+          });
+        }
+      } else {
+        console.log("ERROR: token expired");
+        this.setState({ userInfo: null, token: null, playlists: null });
+      }
+    } catch (e) {
+      if (e.response.data.error.status == 401) {
+        this.props.navigation.dispatch(
+          StackActions.push("SpotifyLogin", {
+            routeName: ""
+          })
+        );
+      } else {
+        Alert.alert("Please connect a spotify device");
+      }
+      console.log(e);
     }
   };
 

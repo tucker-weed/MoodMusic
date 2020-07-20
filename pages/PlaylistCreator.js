@@ -57,31 +57,38 @@ export default class PlaylistCreator extends React.Component {
     const that = this;
     try {
       const token = await getData("accessToken");
-      await this.apiGet(
-        `https://api.spotify.com/v1/me`,
-        token
-      );
+      await this.apiGet(`https://api.spotify.com/v1/me`, token);
       if (which !== "returning") {
         this.setState({ creating: true });
         await setData("Stats", this.state);
         const id = await getData("playlistId");
-        const songs = await new SongEngine(this.state, id, token).algorithm(
-          which,
-          null
-        );
+        let seen_songs = {};
+        if (!that.state.init) {
+          await setData("radioTracks", []);
+          await setData("seenTracks", {});
+        } else {
+          seen_songs = await getData("seenTracks");
+        }
+        const songs = await new SongEngine(
+          this.state,
+          id,
+          token,
+          seen_songs
+        ).algorithm(which, null);
         await setData("playlistData", songs);
-        await setData("returning", that.state.init);
-        that.state.init ? null : await setData("radioTracks", []);
         this.props.navigation.navigate("PlaylistResults");
         this.setState({ creating: false, init: true });
       } else {
         await setData("Stats", that.state);
-        await setData("returning", that.state.init);
         this.props.navigation.navigate("PlaylistResults");
       }
     } catch (e) {
       if (e.response.data.error.status == 401) {
-        this.props.navigation.navigate("SpotifyLogin");
+        this.props.navigation.dispatch(
+          StackActions.push("SpotifyLogin", {
+            routeName: ""
+          })
+        );
       } else {
         Alert.alert("Please connect a spotify device");
       }
