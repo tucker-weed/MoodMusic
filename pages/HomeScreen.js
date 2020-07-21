@@ -15,11 +15,16 @@ export default class HomeScreen extends React.Component {
     this.state = {
       registered: false
     };
+
+    /*
+    Create a new table (titled with a unique radio id (table_u))
+    */
+
     db.transaction(function(txn) {
       txn.executeSql(
         "SELECT name FROM sqlite_master WHERE type='table' AND name='table_u'",
         [],
-        function(tx, res) {
+        function(_, res) {
           if (res.rows.length == 0) {
             txn.executeSql(
               "CREATE TABLE IF NOT EXISTS table_u(user_name VARCHAR(20), user_password VARCHAR(20))",
@@ -36,12 +41,13 @@ export default class HomeScreen extends React.Component {
     const { registered } = this.state;
 
     db.transaction(function(tx) {
-      tx.executeSql("SELECT * FROM table_u", [], (tx, results) => {
+      tx.executeSql("SELECT * FROM table_u", [], (_, results) => {
         if (results.rows.length >= 1 && !registered) {
           that.setState({ registered: !registered });
         }
       });
     });
+    
     return (
       <View
         style={{

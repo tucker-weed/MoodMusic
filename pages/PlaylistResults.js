@@ -73,7 +73,12 @@ export default class PlaylistResults extends React.Component {
       }
       this.setState({ userInfo: data, token: token, playlist: playlist });
     } catch (e) {
-      if (e.response.data.error.status == 401) {
+      const check =
+        e["response"] &&
+        e["response"]["data"] &&
+        e["response"]["data"]["error"] &&
+        e["response"]["data"]["error"]["status"];
+      if (check && e.response.data.error.status == 401) {
         this.props.navigation.dispatch(
           StackActions.push("SpotifyLogin", {
             routeName: ""

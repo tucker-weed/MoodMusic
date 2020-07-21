@@ -203,6 +203,45 @@ export default class SongPlayer extends React.Component {
     );
   };
 
+  saveRadioState = async () => {
+    const { playlistName, artistLikes, trackLikes, seenTracks } = this.state;
+    const response = await getData("AllRadioHistory");
+    const playlistId = await getData("playlistId");
+    const token = await getData("accessToken");
+    try {
+      const responseTwo = await this._apiGet(
+        `https://api.spotify.com/v1/playlists/` + playlistId,
+        token
+      );
+      Alert.alert("Saved Radio History: " + playlistName);
+      const pName = responseTwo.data.name;
+      const radioHistory = response ? response : {};
+      radioHistory[playlistName + "||" + playlistId] = {
+        pName: pName,
+        artistLikes: artistLikes,
+        trackLikes: trackLikes,
+        seenTracks: seenTracks
+      };
+      await setData("AllRadioHistory", radioHistory);
+    } catch (e) {
+      const check =
+        e["response"] &&
+        e["response"]["data"] &&
+        e["response"]["data"]["error"] &&
+        e["response"]["data"]["error"]["status"];
+      if (check && e.response.data.error.status == 401) {
+        this.props.navigation.dispatch(
+          StackActions.push("SpotifyLogin", {
+            routeName: ""
+          })
+        );
+      } else {
+        Alert.alert("Please connect a spotify device");
+      }
+      console.log(e);
+    }
+  };
+
   toggleSwitch = async () => {
     const url =
       "https://api.spotify.com/v1/me/player/shuffle?state=" +
@@ -211,7 +250,12 @@ export default class SongPlayer extends React.Component {
     try {
       await this.apiPutRegular(url, token);
     } catch (e) {
-      if (e.response.data.error.status == 401) {
+      const check =
+        e["response"] &&
+        e["response"]["data"] &&
+        e["response"]["data"]["error"] &&
+        e["response"]["data"]["error"]["status"];
+      if (check && e.response.data.error.status == 401) {
         this.props.navigation.dispatch(
           StackActions.push("SpotifyLogin", {
             routeName: ""
@@ -234,7 +278,7 @@ export default class SongPlayer extends React.Component {
       "https://api.spotify.com/v1/users/" + userId + "/playlists";
     try {
       const response = await this.apiPutNew(playlistUrl, token, name);
-      Alert.alert("Created Playlist: " + name);
+
       const trackUrl =
         "https://api.spotify.com/v1/playlists/" + response.data.id + "/tracks";
       const uriList = [];
@@ -242,8 +286,14 @@ export default class SongPlayer extends React.Component {
         uriList.push("spotify:track:" + this.state.trackLikes[i]);
       }
       await this.apiPut(trackUrl, token, uriList);
+      Alert.alert("Created Playlist: " + name);
     } catch (e) {
-      if (e.response.data.error.status == 401) {
+      const check =
+        e["response"] &&
+        e["response"]["data"] &&
+        e["response"]["data"]["error"] &&
+        e["response"]["data"]["error"]["status"];
+      if (check && e.response.data.error.status == 401) {
         this.props.navigation.dispatch(
           StackActions.push("SpotifyLogin", {
             routeName: ""
@@ -265,7 +315,6 @@ export default class SongPlayer extends React.Component {
       : this.state.artistLikes;
     try {
       if (this.state.artistPlaying && this.state.likes >= 4) {
-        Alert.alert("Upvoted Song - Updating Seed...");
         const replace = artistLikes;
         replace.unshift(this.state.artistPlaying);
         const replaceTracks = trackLikes;
@@ -297,6 +346,7 @@ export default class SongPlayer extends React.Component {
         await setData("radioTracks", replaceTracks);
         await setData("radioArtists", replace);
         await this.apiPut(url, token, ids);
+        Alert.alert("Upvoted Song - Updating Seed...");
         this.setState({
           trackLikes: replaceTracks,
           artistLikes: replace,
@@ -325,7 +375,12 @@ export default class SongPlayer extends React.Component {
         });
       }
     } catch (e) {
-      if (e.response.data.error.status == 401) {
+      const check =
+        e["response"] &&
+        e["response"]["data"] &&
+        e["response"]["data"]["error"] &&
+        e["response"]["data"]["error"]["status"];
+      if (check && e.response.data.error.status == 401) {
         this.props.navigation.dispatch(
           StackActions.push("SpotifyLogin", {
             routeName: ""
@@ -365,7 +420,12 @@ export default class SongPlayer extends React.Component {
         tPos: 0
       });
     } catch (e) {
-      if (e.response.data.error.status == 401) {
+      const check =
+        e["response"] &&
+        e["response"]["data"] &&
+        e["response"]["data"]["error"] &&
+        e["response"]["data"]["error"]["status"];
+      if (check && e.response.data.error.status == 401) {
         this.props.navigation.dispatch(
           StackActions.push("SpotifyLogin", {
             routeName: ""
@@ -408,7 +468,12 @@ export default class SongPlayer extends React.Component {
         tPos: 0
       });
     } catch (e) {
-      if (e.response.data.error.status == 401) {
+      const check =
+        e["response"] &&
+        e["response"]["data"] &&
+        e["response"]["data"]["error"] &&
+        e["response"]["data"]["error"]["status"];
+      if (check && e.response.data.error.status == 401) {
         this.props.navigation.dispatch(
           StackActions.push("SpotifyLogin", {
             routeName: ""
@@ -457,7 +522,12 @@ export default class SongPlayer extends React.Component {
         init: true
       });
     } catch (e) {
-      if (e.response.data.error.status == 401) {
+      const check =
+        e["response"] &&
+        e["response"]["data"] &&
+        e["response"]["data"]["error"] &&
+        e["response"]["data"]["error"]["status"];
+      if (check && e.response.data.error.status == 401) {
         this.props.navigation.dispatch(
           StackActions.push("SpotifyLogin", {
             routeName: ""
@@ -491,7 +561,12 @@ export default class SongPlayer extends React.Component {
         tPos: img[5]
       });
     } catch (e) {
-      if (e.response.data.error.status == 401) {
+      const check =
+        e["response"] &&
+        e["response"]["data"] &&
+        e["response"]["data"]["error"] &&
+        e["response"]["data"]["error"]["status"];
+      if (check && e.response.data.error.status == 401) {
         this.props.navigation.dispatch(
           StackActions.push("SpotifyLogin", {
             routeName: ""
@@ -550,14 +625,24 @@ export default class SongPlayer extends React.Component {
           );
           await this.activatePlayHelper(token);
         } catch (e) {
-          if (e.response.data.error.status == 401) {
+          const check =
+            e["response"] &&
+            e["response"]["data"] &&
+            e["response"]["data"]["error"] &&
+            e["response"]["data"]["error"]["status"];
+          if (check && e.response.data.error.status == 401) {
             this.props.navigation.navigate("SpotifyLogin");
           }
           await this.activatePlayHelper(token);
         }
       }
     } catch (e) {
-      if (e.response.data.error.status == 401) {
+      const check =
+        e["response"] &&
+        e["response"]["data"] &&
+        e["response"]["data"]["error"] &&
+        e["response"]["data"]["error"]["status"];
+      if (check && e.response.data.error.status == 401) {
         this.props.navigation.dispatch(
           StackActions.push("SpotifyLogin", {
             routeName: ""
@@ -596,7 +681,12 @@ export default class SongPlayer extends React.Component {
         tPos: img[5]
       });
     } catch (e) {
-      if (e.response.data.error.status == 401) {
+      const check =
+        e["response"] &&
+        e["response"]["data"] &&
+        e["response"]["data"]["error"] &&
+        e["response"]["data"]["error"]["status"];
+      if (check && e.response.data.error.status == 401) {
         this.props.navigation.dispatch(
           StackActions.push("SpotifyLogin", {
             routeName: ""
@@ -626,6 +716,10 @@ export default class SongPlayer extends React.Component {
         <ButtonOne
           title="Create Playlist"
           customClick={this.createNewPlaylist}
+        />
+        <ButtonOne
+          title="Save Radio History"
+          customClick={this.saveRadioState}
         />
         <ButtonOne title="LIKE" customClick={this.like} />
         <View

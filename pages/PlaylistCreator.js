@@ -57,24 +57,44 @@ export default class PlaylistCreator extends React.Component {
     const that = this;
     try {
       const token = await getData("accessToken");
-      await this.apiGet(`https://api.spotify.com/v1/me`, token);
+      const radioPlaying = await getData("radioPlaying");
+      const id = await getData("playlistId");
+
       if (which !== "returning") {
         this.setState({ creating: true });
         await setData("Stats", this.state);
-        const id = await getData("playlistId");
         let seen_songs = {};
-        if (!that.state.init) {
+        let extraArtists = [];
+        if (!that.state.init && !radioPlaying) {
           await setData("radioTracks", []);
+          await setData("radioArtists", []);
           await setData("seenTracks", {});
-        } else {
+        } else if (that.state.init) {
           seen_songs = await getData("seenTracks");
+          extraArtists = await getData("radioArtists");
+        } else {
+          const radioHistory = await getData("AllRadioHistory");
+          const radioName = await getData("targetRadio");
+          if (radioHistory && radioName) {
+            await setData("radioTracks", radioHistory[radioName].trackLikes);
+            await setData("radioArtists", radioHistory[radioName].artistLikes);
+            await setData("seenTracks", radioHistory[radioName].seenTracks);
+            seen_songs = radioHistory[radioName].seenTracks;
+            extraArtists = radioHistory[radioName].artistLikes;
+            await setData("radioPlaying", false);
+          } else {
+            await setData("radioTracks", []);
+            await setData("radioArtists", []);
+            await setData("seenTracks", {});
+            await setData("radioPlaying", false);
+          }
         }
         const songs = await new SongEngine(
           this.state,
           id,
           token,
           seen_songs
-        ).algorithm(which, null);
+        ).algorithm(which, extraArtists);
         await setData("playlistData", songs);
         this.props.navigation.navigate("PlaylistResults");
         this.setState({ creating: false, init: true });
@@ -83,14 +103,17 @@ export default class PlaylistCreator extends React.Component {
         this.props.navigation.navigate("PlaylistResults");
       }
     } catch (e) {
-      if (e.response.data.error.status == 401) {
+      const check =
+        e["response"] &&
+        e["response"]["data"] &&
+        e["response"]["data"]["error"] &&
+        e["response"]["data"]["error"]["status"];
+      if (check && e.response.data.error.status == 401) {
         this.props.navigation.dispatch(
           StackActions.push("SpotifyLogin", {
             routeName: ""
           })
         );
-      } else {
-        Alert.alert("Please connect a spotify device");
       }
       console.log(e);
     }
@@ -141,11 +164,11 @@ export default class PlaylistCreator extends React.Component {
             </TouchableOpacity>
           </View>
         )}
-
+        <Mytext text={"Seed Playlist: " + this.props.route.params.pName} />
         <View style={localStyles.container}>
           <MytextTwo text={"Euphoria: " + this.state.euphoria} />
           <Slider
-            style={{ width: 300, height: 40 }}
+            style={{ width: 300, height: 20 }}
             minimumValue={-275}
             maximumValue={275}
             disabled={this.state.creating ? true : false}
@@ -157,7 +180,7 @@ export default class PlaylistCreator extends React.Component {
         <View style={localStyles.container}>
           <MytextTwo text={"Energy: " + this.state.hype} />
           <Slider
-            style={{ width: 300, height: 40 }}
+            style={{ width: 300, height: 20 }}
             minimumValue={-875}
             maximumValue={875}
             disabled={this.state.creating ? true : false}
@@ -169,7 +192,7 @@ export default class PlaylistCreator extends React.Component {
         <View style={localStyles.container}>
           <Mytext text={"Song Popularity: " + this.state.sPopularity} />
           <Slider
-            style={{ width: 300, height: 40 }}
+            style={{ width: 300, height: 20 }}
             minimumValue={0}
             maximumValue={100}
             disabled={this.state.creating ? true : false}
@@ -183,7 +206,7 @@ export default class PlaylistCreator extends React.Component {
         <View style={localStyles.container}>
           <Mytext text={"Tempo: " + this.state.tempo} />
           <Slider
-            style={{ width: 300, height: 40 }}
+            style={{ width: 300, height: 20 }}
             minimumValue={0}
             maximumValue={200}
             disabled={this.state.creating ? true : false}
@@ -220,7 +243,7 @@ export default class PlaylistCreator extends React.Component {
             value={this.state.isEnabled}
           />
           <Slider
-            style={{ width: 300, height: 40 }}
+            style={{ width: 300, height: 20 }}
             minimumValue={0}
             maximumValue={11}
             disabled={this.state.creating ? true : false}
