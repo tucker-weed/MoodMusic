@@ -9,15 +9,14 @@ import { styles } from "../Styles.js";
 import { setData } from "../LocalStorage.js";
 const CLIENT_ID = "bc4798c9fb304cbc83425e514fa4e986";
 
+/**
+ * SpotifyLogin class: Spotify authentication page component
+ *
+ * @param userInfo - the spotify account holder's info
+ * @param didError - indicates whether or not authentication succeeded
+ * @param token - the spotify api's required authentication token
+ */
 export default class SpotifyLogin extends React.Component {
-  /**
-   * Component state
-   *
-   * @param userInfo - the spotify account holder's info
-   * @param didError - indicates whether or not authentication succeeded
-   * @param token - the spotify api's required authentication token
-   * @param playlists - a json of a list of the account holder's playlists
-   */
   constructor(props) {
     super(props);
     this.state = {

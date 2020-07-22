@@ -397,11 +397,11 @@ export default class SongPlayer extends React.Component {
     const token = await getData("accessToken");
     try {
       await this.apiPost("https://api.spotify.com/v1/me/player/next", token);
-      let urlTracker = this.state.current;
+      let nameTracker = this.state.songName;
       let trackimg;
-      while (urlTracker === this.state.current) {
+      while (nameTracker === this.state.songName) {
         trackimg = await this.apiGetTrackImage(token);
-        urlTracker = trackimg[0];
+        nameTracker = trackimg[1];
       }
       const seen = this.initSeen
         ? this.state.seenTracks
@@ -445,11 +445,11 @@ export default class SongPlayer extends React.Component {
         "https://api.spotify.com/v1/me/player/previous",
         token
       );
-      let urlTracker = this.state.current;
+      let nameTracker = this.state.songName;
       let trackimg;
-      while (urlTracker === this.state.current) {
+      while (nameTracker === this.state.songName) {
         trackimg = await this.apiGetTrackImage(token);
-        urlTracker = trackimg[0];
+        nameTracker = trackimg[1];
       }
       const seen = this.initSeen
         ? this.state.seenTracks

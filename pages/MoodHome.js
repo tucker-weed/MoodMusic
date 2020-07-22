@@ -214,10 +214,11 @@ export default class MoodHome extends React.Component {
                   style={styles.listButton}
                   onPress={async () => {
                     await setData("playlistId", item.id);
-                    await setData("radioPlaying", false);
                     this.props.navigation.dispatch(
                       StackActions.replace("PlaylistCreator", {
-                        pName: item.name
+                        pName: item.name,
+                        triggerRadioLoad: false,
+                        targetRadio: ''
                       })
                     );
                   }}
@@ -259,12 +260,12 @@ export default class MoodHome extends React.Component {
                     const arr =
                       item.split("||").length >= 1 ? item.split("||") : null;
                     arr ? await setData("playlistId", arr.pop()) : null;
-                    await setData("radioPlaying", true);
-                    await setData("targetRadio", item);
                     const hist = await getData("AllRadioHistory");
                     this.props.navigation.dispatch(
                       StackActions.replace("PlaylistCreator", {
-                        pName: hist[item].pName
+                        pName: hist[item].pName,
+                        triggerRadioLoad: true,
+                        targetRadio: item
                       })
                     );
                   }}

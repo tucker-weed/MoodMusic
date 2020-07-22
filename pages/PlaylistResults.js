@@ -84,8 +84,6 @@ export default class PlaylistResults extends React.Component {
             routeName: ""
           })
         );
-      } else {
-        Alert.alert("Please connect a spotify device");
       }
       console.log(e);
     }

@@ -87,23 +87,12 @@ export default class SongEngine {
       features = trackData.data.audio_features;
       const euphoria =
         this.state.euphoria >= 0
-          ? features[j].danceability * 100 +
-            features[j].valence * 100 +
-            features[j].energy * 75
-          : (1 - features[j].danceability) * 100 +
-            (1 - features[j].valence) * 100 +
-            (1 - features[j].energy) * 75;
+          ? features[j].valence * 50 + features[j].danceability * 50
+          : (1 - features[j].valence) * 100;
       const hype =
         this.state.hype >= 0
-          ? features[j].tempo * 2 +
-            features[j].energy * 150 +
-            features[j].acousticness * 75 +
-            features[j].danceability * 150
-          : 500 -
-            features[j].tempo * 2 +
-            (1 - features[j].energy) * 150 +
-            (1 - features[j].acousticness) * 75 +
-            (1 - features[j].danceability) * 150;
+          ? features[j].energy * 160 + features[j].acousticness * 40
+          : (1 - features[j].energy) * 200;
       const filteredValuesCheck =
         features[j].tempo > this.state.tempo &&
         euphoria > Math.abs(this.state.euphoria) &&
@@ -126,7 +115,7 @@ export default class SongEngine {
   };
 
   /**
-   * Takes an array of 5 seed IDs and produces 100 recommendations
+   * Takes an array of 2 seed IDs and produces 100 recommendations
    *
    * @param artistIds - an array of artist ID strings
    * @returns - a two element array, with index 0 being an array of track ID
@@ -135,7 +124,7 @@ export default class SongEngine {
   _getSeededRecs = async artistIds => {
     const idString = artistIds.join(",");
     const url =
-      "https://api.spotify.com/v1/recommendations?limit=50&seed_artists=" +
+      "https://api.spotify.com/v1/recommendations?limit=100&seed_artists=" +
       idString +
       "&market=from_token";
     const response = await this._apiGet(url);
@@ -167,7 +156,7 @@ export default class SongEngine {
       !this._timeout(start, 7)
     ) {
       const idAccum = [];
-      for (let i = 0; i < artistIds.length && idAccum.length < 5; i++) {
+      for (let i = 0; i < artistIds.length && idAccum.length < 2; i++) {
         if (!addedArtists[artistIds[i]]) {
           idAccum.push(artistIds[i]);
           addedArtists[artistIds[i]] = true;

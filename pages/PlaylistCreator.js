@@ -57,15 +57,14 @@ export default class PlaylistCreator extends React.Component {
     const that = this;
     try {
       const token = await getData("accessToken");
-      const radioPlaying = await getData("radioPlaying");
+      const triggerRadioLoad = this.props.route.params.triggerRadioLoad;
       const id = await getData("playlistId");
 
-      if (which !== "returning") {
+      if (which !== "ignoreAlgorithm") {
         this.setState({ creating: true });
-        await setData("Stats", this.state);
         let seen_songs = {};
         let extraArtists = [];
-        if (!that.state.init && !radioPlaying) {
+        if (!that.state.init && !triggerRadioLoad) {
           await setData("radioTracks", []);
           await setData("radioArtists", []);
           await setData("seenTracks", {});
@@ -74,19 +73,13 @@ export default class PlaylistCreator extends React.Component {
           extraArtists = await getData("radioArtists");
         } else {
           const radioHistory = await getData("AllRadioHistory");
-          const radioName = await getData("targetRadio");
+          const radioName = this.props.route.params.targetRadio;
           if (radioHistory && radioName) {
             await setData("radioTracks", radioHistory[radioName].trackLikes);
             await setData("radioArtists", radioHistory[radioName].artistLikes);
             await setData("seenTracks", radioHistory[radioName].seenTracks);
             seen_songs = radioHistory[radioName].seenTracks;
             extraArtists = radioHistory[radioName].artistLikes;
-            await setData("radioPlaying", false);
-          } else {
-            await setData("radioTracks", []);
-            await setData("radioArtists", []);
-            await setData("seenTracks", {});
-            await setData("radioPlaying", false);
           }
         }
         const songs = await new SongEngine(
@@ -96,6 +89,7 @@ export default class PlaylistCreator extends React.Component {
           seen_songs
         ).algorithm(which, extraArtists);
         await setData("playlistData", songs);
+        await setData("Stats", that.state);
         this.props.navigation.navigate("PlaylistResults");
         this.setState({ creating: false, init: true });
       } else {
@@ -147,7 +141,7 @@ export default class PlaylistCreator extends React.Component {
             {this.state.init ? (
               <TouchableOpacity
                 style={styles.skinnyButton}
-                onPress={() => this.activateAlgorithm("returning")}
+                onPress={() => this.activateAlgorithm("ignoreAlgorithm")}
               >
                 <Text style={styles.buttonText}>
                   Return to Current Playlist
@@ -166,11 +160,17 @@ export default class PlaylistCreator extends React.Component {
         )}
         <Mytext text={"Seed Playlist: " + this.props.route.params.pName} />
         <View style={localStyles.container}>
-          <MytextTwo text={"Euphoria: " + this.state.euphoria} />
+          <MytextTwo
+            text={
+              this.state.euphoria >= 0
+                ? "Euphoria: " + this.state.euphoria
+                : "Dark: " + Math.abs(this.state.euphoria)
+            }
+          />
           <Slider
             style={{ width: 300, height: 20 }}
-            minimumValue={-275}
-            maximumValue={275}
+            minimumValue={-100}
+            maximumValue={100}
             disabled={this.state.creating ? true : false}
             minimumTrackTintColor="#FFFFFF"
             maximumTrackTintColor="#000000"
@@ -178,11 +178,17 @@ export default class PlaylistCreator extends React.Component {
           />
         </View>
         <View style={localStyles.container}>
-          <MytextTwo text={"Energy: " + this.state.hype} />
+          <MytextTwo
+            text={
+              this.state.hype >= 0
+                ? "Hype: " + this.state.hype
+                : "Chill: " + Math.abs(this.state.hype)
+            }
+          />
           <Slider
             style={{ width: 300, height: 20 }}
-            minimumValue={-875}
-            maximumValue={875}
+            minimumValue={-200}
+            maximumValue={200}
             disabled={this.state.creating ? true : false}
             minimumTrackTintColor="#FFFFFF"
             maximumTrackTintColor="#000000"
