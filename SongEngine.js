@@ -58,14 +58,48 @@ export default class SongEngine {
   };
 
   /**
+   * Applies a filter to data based on user input
+   *
+   * @param features - an Array of track audio features
+   * @param index - index of target feature
+   * @param data - an Array of track json data
+   * @returns - track json data if it passed filters, null otherwise
+   */
+  _applyFilter = (features, index, data) => {
+    const euphoria =
+      this.state.euphoria >= 0
+        ? features[index].valence * 50 + features[index].danceability * 50
+        : (1 - features[index].valence) * 100;
+    const hype =
+      this.state.hype >= 0
+        ? features[index].energy * 160 + features[index].acousticness * 40
+        : (1 - features[index].energy) * 200;
+    const passedFeaturesCheck =
+      features[index].tempo > this.state.tempo &&
+      euphoria > Math.abs(this.state.euphoria) &&
+      hype > Math.abs(this.state.hype) &&
+      (!this.state.isEnabled || features[index].key == this.state.key) &&
+      !this.seenSongs[features[index].id];
+    const filtered_popularity_song =
+      data["items"] &&
+      data.items[index].track.popularity > this.state.sPopularity
+        ? data.items[index]
+        : data["tracks"] &&
+          data.tracks[index].popularity > this.state.sPopularity
+        ? data.tracks[index]
+        : null;
+
+    return passedFeaturesCheck ? filtered_popularity_song : null;
+  };
+
+  /**
    * Takes a string of track IDs and filters the tracks based on state values
    *
-   * @param start - start time of the algorithm
    * @param data - a reference to an api response of Track Info json
    * @param idString - a string composed of track IDs
    * @returns - an array of Track Information json
    */
-  _filterSongs = async (start, data, idString) => {
+  _collectFilteredSongs = async (data, idString) => {
     let songsToReturn = [];
     const songsUrl =
       "https://api.spotify.com/v1/audio-features/?ids=" + idString;
@@ -79,35 +113,10 @@ export default class SongEngine {
     let j = 0;
     let features;
 
-    while (
-      existenceCheck &&
-      j < trackData.data.audio_features.length &&
-      !this._timeout(start, 7)
-    ) {
+    while (existenceCheck && j < trackData.data.audio_features.length) {
       features = trackData.data.audio_features;
-      const euphoria =
-        this.state.euphoria >= 0
-          ? features[j].valence * 50 + features[j].danceability * 50
-          : (1 - features[j].valence) * 100;
-      const hype =
-        this.state.hype >= 0
-          ? features[j].energy * 160 + features[j].acousticness * 40
-          : (1 - features[j].energy) * 200;
-      const filteredValuesCheck =
-        features[j].tempo > this.state.tempo &&
-        euphoria > Math.abs(this.state.euphoria) &&
-        hype > Math.abs(this.state.hype) &&
-        (!this.state.isEnabled || features[j].key == this.state.key) &&
-        !this.seenSongs[features[j].id];
-      const pop = this.state.sPopularity;
-
-      if (filteredValuesCheck) {
-        if (data["items"] && data.items[j].track.popularity > pop) {
-          songsToReturn.push(data.items[j]);
-        } else if (data["tracks"] && data.tracks[j].popularity > pop) {
-          songsToReturn.push(data.tracks[j]);
-        }
-      }
+      const songOrNull = this._applyFilter(features, j, data);
+      songOrNull ? songsToReturn.push(songOrNull) : null;
       j++;
       existenceCheck = features[j] && features[j]["danceability"];
     }
@@ -167,8 +176,7 @@ export default class SongEngine {
         idAccum.length > 0 ? await this._getSeededRecs(idAccum, false) : null;
 
       if (songsAndResponse && songsAndResponse[0].length > 0) {
-        const filtered = await this._filterSongs(
-          start,
+        const filtered = await this._collectFilteredSongs(
           songsAndResponse[1].data,
           songsAndResponse[0]
         );
@@ -203,19 +211,18 @@ export default class SongEngine {
       "https://api.spotify.com/v1/playlists/" + this.playlistId + "/tracks";
     const response = await this._apiGet(url);
     const playlistItems = response.data.items;
-    const start = new Date().getTime();
     const artistIds = [];
     const addedArtists = {};
     let playlistToReturn;
 
     for (let i = 0; i < playlistItems.length; i++) {
       if (playlistItems[i].track.artists[0]) {
-        const idToAdd = playlistItems[i].track.artists[0].id;
-        if (addedArtists[idToAdd]) {
-          addedArtists[idToAdd].push(playlistItems[i].track.id);
+        const artist_id = playlistItems[i].track.artists[0].id;
+        if (addedArtists[artist_id]) {
+          addedArtists[artist_id].push(playlistItems[i].track.id);
         } else {
-          artistIds.push(idToAdd);
-          addedArtists[idToAdd] = [playlistItems[i].track.id];
+          artistIds.push(artist_id);
+          addedArtists[artist_id] = [playlistItems[i].track.id];
         }
       }
     }
@@ -230,8 +237,7 @@ export default class SongEngine {
           idsAdded++;
         }
       }
-      playlistToReturn = await this._filterSongs(
-        start,
+      playlistToReturn = await this._collectFilteredSongs(
         response.data,
         idString
       );

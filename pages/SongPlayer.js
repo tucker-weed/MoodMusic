@@ -10,15 +10,16 @@ import {
   StyleSheet,
   Switch
 } from "react-native";
+import axios from "axios";
 import Slider from "@react-native-community/slider";
 import { ButtonOne } from "../components/MyButtons.js";
 import { styles } from "../Styles.js";
-import axios from "axios";
 import { setData, getData } from "../LocalStorage.js";
 import Mytextinput from "../components/Mytextinput.js";
 import { PlayerButton } from "../components/MyButtons.js";
 import { Mytext } from "../components/Mytext.js";
 import SongEngine from "../SongEngine.js";
+import PlayerController from "../PlayerController.js";
 import { StackActions } from "@react-navigation/native";
 
 export default class SongPlayer extends React.Component {
@@ -45,20 +46,6 @@ export default class SongPlayer extends React.Component {
       });
   }
 
-  /**
-   * Requests information based on url and gives a response
-   *
-   * @param url - the url of the spotify api with a given endpoint
-   * @returns - a json object being the api response, or an error
-   */
-  _apiGet = async (url, token) => {
-    return await axios.get(url, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-  };
-
   apiPut = async (url, token, trackIds) => {
     const jsonData = {
       uris: trackIds
@@ -71,117 +58,6 @@ export default class SongPlayer extends React.Component {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json;charset=UTF-8",
           "Access-Control-Allow-Origin": "*"
-        },
-        data: jsonData,
-        dataType: "json"
-      }
-    );
-  };
-
-  apiGetTrackImage = async token => {
-    let img = ["", "", "", "", ""];
-    const response = await axios.get("https://api.spotify.com/v1/me/player", {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    if (
-      response &&
-      response.data["item"] &&
-      response.data.item["album"] &&
-      response.data.item.album.images[0]
-    ) {
-      img[0] = response.data.item.album.images[0].url;
-      img[1] = response.data.item.name;
-      img[2] = response.data.item.album.artists[0].id;
-      img[3] = response.data.item.id;
-      img[4] = response.data.item.duration_ms;
-      img[5] = response.data.progress_ms;
-    }
-    return img;
-  };
-
-  apiGetContextUri = async token => {
-    let uri = "";
-    const response = await axios.get("https://api.spotify.com/v1/me/player", {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    if (response && response.data["context"]) {
-      uri = response.data.context.uri;
-    }
-    return uri;
-  };
-
-  apiPost = async (url, token) => {
-    await axios.post(
-      url,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json;charset=UTF-8",
-          "Access-Control-Allow-Origin": "*"
-        }
-      }
-    );
-  };
-
-  apiPutNew = async (url, token, name) => {
-    const jsonData = {
-      name: name,
-      public: true
-    };
-    return await axios.post(
-      url,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json;charset=UTF-8",
-          "Access-Control-Allow-Origin": "*"
-        },
-        data: jsonData,
-        dataType: "json"
-      }
-    );
-  };
-
-  apiPutTracks = async (url, token, trackIds) => {
-    const jsonData = {
-      uris: trackIds
-    };
-    return await axios.put(
-      url,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json;charset=UTF-8",
-          "Access-Control-Allow-Origin": "*"
-        },
-        data: jsonData,
-        dataType: "json"
-      }
-    );
-  };
-
-  apiPutNav = async (url, token, id) => {
-    const jsonData = {
-      context_uri: "spotify:user:12168726728:playlist:" + id
-    };
-    return await axios.put(
-      url,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json;charset=UTF-8",
-          "Access-Control-Allow-Origin": "*",
-          Accept: "application/json"
         },
         data: jsonData,
         dataType: "json"
@@ -203,106 +79,182 @@ export default class SongPlayer extends React.Component {
     );
   };
 
+  parseError = err => {
+    console.log(err);
+    const check =
+      err["response"] &&
+      err["response"]["data"] &&
+      err["response"]["data"]["error"] &&
+      err["response"]["data"]["error"]["status"];
+    if (check && err.response.data.error.status == 401) {
+      this.props.navigation.dispatch(
+        StackActions.push("SpotifyLogin", {
+          routeName: ""
+        })
+      );
+    } else {
+      Alert.alert("Please connect a spotify device");
+    }
+  };
+
   saveRadioState = async () => {
-    const { playlistName, artistLikes, trackLikes, seenTracks } = this.state;
-    const response = await getData("AllRadioHistory");
+    const radioHist = await getData("AllRadioHistory");
     const playlistId = await getData("playlistId");
     const token = await getData("accessToken");
+    const controller = new PlayerController(this.initSeen, this.state, token);
     try {
-      const responseTwo = await this._apiGet(
-        `https://api.spotify.com/v1/playlists/` + playlistId,
-        token
+      const { newHist, msg } = await controller.updateRadioHistory(
+        radioHist,
+        playlistId
       );
-      Alert.alert("Saved Radio History: " + playlistName);
-      const pName = responseTwo.data.name;
-      const radioHistory = response ? response : {};
-      radioHistory[playlistName + "||" + playlistId] = {
-        pName: pName,
-        artistLikes: artistLikes,
-        trackLikes: trackLikes,
-        seenTracks: seenTracks
-      };
-      await setData("AllRadioHistory", radioHistory);
+      Alert.alert(msg);
+      await setData("AllRadioHistory", newHist);
     } catch (e) {
-      const check =
-        e["response"] &&
-        e["response"]["data"] &&
-        e["response"]["data"]["error"] &&
-        e["response"]["data"]["error"]["status"];
-      if (check && e.response.data.error.status == 401) {
-        this.props.navigation.dispatch(
-          StackActions.push("SpotifyLogin", {
-            routeName: ""
-          })
-        );
-      } else {
-        Alert.alert("Please connect a spotify device");
-      }
-      console.log(e);
+      this.parseError(e);
     }
   };
 
   toggleSwitch = async () => {
-    const url =
-      "https://api.spotify.com/v1/me/player/shuffle?state=" +
-      !this.state.shuffle;
     const token = await getData("accessToken");
+    const controller = new PlayerController(this.initSeen, this.state, token);
     try {
-      await this.apiPutRegular(url, token);
+      await controller.toggleShuffle();
     } catch (e) {
-      const check =
-        e["response"] &&
-        e["response"]["data"] &&
-        e["response"]["data"]["error"] &&
-        e["response"]["data"]["error"]["status"];
-      if (check && e.response.data.error.status == 401) {
-        this.props.navigation.dispatch(
-          StackActions.push("SpotifyLogin", {
-            routeName: ""
-          })
-        );
-      } else {
-        Alert.alert("Please connect a spotify device");
-      }
-      console.log(e);
+      this.parseError(e);
     }
     this.setState({ shuffle: !this.state.shuffle });
   };
 
   createNewPlaylist = async () => {
     Keyboard.dismiss();
-    const name = this.state.playlistName;
     const token = await getData("accessToken");
     const userId = await getData("userId");
-    const playlistUrl =
-      "https://api.spotify.com/v1/users/" + userId + "/playlists";
+    const controller = new PlayerController(this.initSeen, this.state, token);
     try {
-      const response = await this.apiPutNew(playlistUrl, token, name);
-
-      const trackUrl =
-        "https://api.spotify.com/v1/playlists/" + response.data.id + "/tracks";
-      const uriList = [];
-      for (let i = 0; i < this.state.trackLikes.length; i++) {
-        uriList.push("spotify:track:" + this.state.trackLikes[i]);
-      }
-      await this.apiPut(trackUrl, token, uriList);
-      Alert.alert("Created Playlist: " + name);
+      const msg = await controller.createPlaylist(
+        userId,
+        this.state.playlistName
+      );
+      Alert.alert(msg);
     } catch (e) {
-      const check =
-        e["response"] &&
-        e["response"]["data"] &&
-        e["response"]["data"]["error"] &&
-        e["response"]["data"]["error"]["status"];
-      if (check && e.response.data.error.status == 401) {
-        this.props.navigation.dispatch(
-          StackActions.push("SpotifyLogin", {
-            routeName: ""
-          })
-        );
-      } else {
-        Alert.alert("Please connect a spotify device");
-      }
-      console.log(e);
+      this.parseError(e);
+    }
+  };
+
+  activateNext = async () => {
+    const token = await getData("accessToken");
+    const controller = new PlayerController(this.initSeen, this.state, token);
+    try {
+      const savedSeen = await getData("seenTracks");
+      const { trackData, seen } = await controller.next(savedSeen);
+      this.initSeen = true;
+      await setData("seenTracks", seen);
+      this.setState({
+        playing: true,
+        current: trackData[0],
+        songName: trackData[1],
+        artistPlaying: trackData[2],
+        trackPlaying: trackData[3],
+        trackDuration: trackData[4],
+        seenTracks: seen,
+        tPos: 0
+      });
+    } catch (e) {
+      this.parseError(e);
+    }
+  };
+
+  activateBack = async () => {
+    const token = await getData("accessToken");
+    const controller = new PlayerController(this.initSeen, this.state, token);
+    try {
+      const savedSeen = await getData("seenTracks");
+      const { trackData, seen } = await controller.back(savedSeen);
+      this.initSeen = true;
+      await setData("seenTracks", seen);
+      this.setState({
+        playing: true,
+        current: trackData[0],
+        songName: trackData[1],
+        artistPlaying: trackData[2],
+        trackPlaying: trackData[3],
+        seenTracks: seen,
+        trackDuration: trackData[4],
+        tPos: 0
+      });
+    } catch (e) {
+      this.parseError(e);
+    }
+  };
+
+  activateLoadTracks = async () => {
+    const token = await getData("accessToken");
+    const radA = await getData("radioArtists");
+    const radT = await getData("radioTracks");
+    const controller = new PlayerController(this.initSeen, this.state, token);
+    try {
+      const { songs, trackLikes, artistLikes } = await controller.load(
+        radA,
+        radT
+      );
+      this.setState({
+        playlist: songs,
+        trackLikes: trackLikes,
+        artistLikes: artistLikes,
+        init: true
+      });
+    } catch (e) {
+      this.parseError(e);
+    }
+  };
+
+  activatePlay = async () => {
+    const token = await getData("accessToken");
+    const id = await getData("mmPlaylist");
+    const controller = new PlayerController(this.initSeen, this.state, token);
+    Keyboard.dismiss();
+    try {
+      const seenTracks = await getData("seenTracks");
+      const { trackData, seen } = await controller.play(id, seenTracks);
+      this.initSeen = true;
+      await setData("seenTracks", seen);
+      this.setState({
+        navigated: true,
+        playing: true,
+        current: trackData[0],
+        songName: trackData[1],
+        artistPlaying: trackData[2],
+        trackPlaying: trackData[3],
+        seenTracks: seen,
+        trackDuration: trackData[4],
+        tPos: trackData[5]
+      });
+    } catch (e) {
+      this.parseError(e);
+    }
+  };
+
+  activatePause = async () => {
+    const token = await getData("accessToken");
+    const seenTracks = await getData("seenTracks");
+    const controller = new PlayerController(this.initSeen, this.state, token);
+    Keyboard.dismiss();
+    try {
+      const { trackData, seen } = await controller.pause(seenTracks);
+      this.initSeen = true;
+      await setData("seenTracks", seen);
+      this.setState({
+        playing: false,
+        current: trackData[0],
+        songName: trackData[1],
+        artistPlaying: trackData[2],
+        trackPlaying: trackData[3],
+        seenTracks: seen,
+        trackDuration: trackData[4],
+        tPos: trackData[5]
+      });
+    } catch (e) {
+      this.parseError(e);
     }
   };
 
@@ -327,14 +279,14 @@ export default class SongPlayer extends React.Component {
         const mmId = await getData("mmPlaylist");
         const token = await getData("accessToken");
         const stats = await getData("Stats");
+        const url = "https://api.spotify.com/v1/playlists/" + mmId + "/tracks";
+        const ids = [];
         const playlist = await new SongEngine(
           stats,
           playlistId,
           token,
           this.state.seenTracks
         ).algorithm("create", replace);
-        const url = "https://api.spotify.com/v1/playlists/" + mmId + "/tracks";
-        const ids = [];
 
         for (let i = 0; i < playlist.length; i++) {
           ids.push(
@@ -375,327 +327,7 @@ export default class SongPlayer extends React.Component {
         });
       }
     } catch (e) {
-      const check =
-        e["response"] &&
-        e["response"]["data"] &&
-        e["response"]["data"]["error"] &&
-        e["response"]["data"]["error"]["status"];
-      if (check && e.response.data.error.status == 401) {
-        this.props.navigation.dispatch(
-          StackActions.push("SpotifyLogin", {
-            routeName: ""
-          })
-        );
-      } else {
-        Alert.alert("Please connect a spotify device");
-      }
-      console.log(e);
-    }
-  };
-
-  activateNext = async () => {
-    const token = await getData("accessToken");
-    try {
-      await this.apiPost("https://api.spotify.com/v1/me/player/next", token);
-      let nameTracker = this.state.songName;
-      let trackimg;
-      while (nameTracker === this.state.songName) {
-        trackimg = await this.apiGetTrackImage(token);
-        nameTracker = trackimg[1];
-      }
-      const seen = this.initSeen
-        ? this.state.seenTracks
-        : await getData("seenTracks");
-      this.initSeen = true;
-      seen[trackimg[3]] = true;
-      await setData("seenTracks", seen);
-      this.setState({
-        playing: true,
-        current: trackimg[0],
-        songName: trackimg[1],
-        artistPlaying: trackimg[2],
-        trackPlaying: trackimg[3],
-        trackDuration: trackimg[4],
-        seenTracks: seen,
-        tPos: 0
-      });
-    } catch (e) {
-      const check =
-        e["response"] &&
-        e["response"]["data"] &&
-        e["response"]["data"]["error"] &&
-        e["response"]["data"]["error"]["status"];
-      if (check && e.response.data.error.status == 401) {
-        this.props.navigation.dispatch(
-          StackActions.push("SpotifyLogin", {
-            routeName: ""
-          })
-        );
-      } else {
-        Alert.alert("Please connect a spotify device");
-      }
-      console.log(e);
-    }
-  };
-
-  activateBack = async () => {
-    const token = await getData("accessToken");
-    try {
-      await this.apiPost(
-        "https://api.spotify.com/v1/me/player/previous",
-        token
-      );
-      let nameTracker = this.state.songName;
-      let trackimg;
-      while (nameTracker === this.state.songName) {
-        trackimg = await this.apiGetTrackImage(token);
-        nameTracker = trackimg[1];
-      }
-      const seen = this.initSeen
-        ? this.state.seenTracks
-        : await getData("seenTracks");
-      this.initSeen = true;
-      seen[trackimg[3]] = true;
-      await setData("seenTracks", seen);
-      this.setState({
-        playing: true,
-        current: trackimg[0],
-        songName: trackimg[1],
-        artistPlaying: trackimg[2],
-        trackPlaying: trackimg[3],
-        seenTracks: seen,
-        trackDuration: trackimg[4],
-        tPos: 0
-      });
-    } catch (e) {
-      const check =
-        e["response"] &&
-        e["response"]["data"] &&
-        e["response"]["data"]["error"] &&
-        e["response"]["data"]["error"]["status"];
-      if (check && e.response.data.error.status == 401) {
-        this.props.navigation.dispatch(
-          StackActions.push("SpotifyLogin", {
-            routeName: ""
-          })
-        );
-      } else {
-        Alert.alert("Please connect a spotify device");
-      }
-      console.log(e);
-    }
-  };
-
-  activateLoadTracks = async () => {
-    const token = await getData("accessToken");
-    const trackLikes =
-      !this.state.init && (await getData("returning"))
-        ? await getData("radioTracks")
-        : this.state.trackLikes;
-    const artistLikes =
-      !this.state.init && (await getData("returning"))
-        ? await getData("radioArtists")
-        : this.state.artistLikes;
-    if (trackLikes.length == 0) {
-      return;
-    }
-    const songsUrl1 =
-      "https://api.spotify.com/v1/tracks/?ids=" +
-      trackLikes.slice(0, 50).join(",") +
-      "&market=from_token";
-    try {
-      const response1 = await this._apiGet(songsUrl1, token);
-      const songs = [];
-      songs.push(...response1.data.tracks);
-      if (trackLikes.length > 50) {
-        const songsUrl2 =
-          "https://api.spotify.com/v1/tracks/?ids=" +
-          trackLikes.slice(50, 100).join(",") +
-          "&market=from_token";
-        const response2 = await this._apiGet(songsUrl2, token);
-        songs.push(...response2.data.tracks);
-      }
-      this.setState({
-        playlist: songs,
-        trackLikes: trackLikes,
-        artistLikes: artistLikes,
-        init: true
-      });
-    } catch (e) {
-      const check =
-        e["response"] &&
-        e["response"]["data"] &&
-        e["response"]["data"]["error"] &&
-        e["response"]["data"]["error"]["status"];
-      if (check && e.response.data.error.status == 401) {
-        this.props.navigation.dispatch(
-          StackActions.push("SpotifyLogin", {
-            routeName: ""
-          })
-        );
-      } else {
-        Alert.alert("Please connect a spotify device");
-      }
-      console.log(e);
-    }
-  };
-
-  activatePlayHelper = async token => {
-    try {
-      const img = await this.apiGetTrackImage(token);
-      const seen = this.initSeen
-        ? this.state.seenTracks
-        : await getData("seenTracks");
-      this.initSeen = true;
-      seen[img[3]] = true;
-      await setData("seenTracks", seen);
-      this.setState({
-        navigated: true,
-        playing: true,
-        current: img[0],
-        songName: img[1],
-        artistPlaying: img[2],
-        trackPlaying: img[3],
-        seenTracks: seen,
-        trackDuration: img[4],
-        tPos: img[5]
-      });
-    } catch (e) {
-      const check =
-        e["response"] &&
-        e["response"]["data"] &&
-        e["response"]["data"]["error"] &&
-        e["response"]["data"]["error"]["status"];
-      if (check && e.response.data.error.status == 401) {
-        this.props.navigation.dispatch(
-          StackActions.push("SpotifyLogin", {
-            routeName: ""
-          })
-        );
-      } else {
-        Alert.alert("Please connect a spotify device");
-      }
-      const img = await this.apiGetTrackImage(token);
-      const seen = this.initSeen
-        ? this.state.seenTracks
-        : await getData("seenTracks");
-      this.initSeen = true;
-      seen[img[3]] = true;
-      await setData("seenTracks", seen);
-      this.setState({
-        navigated: true,
-        playing: true,
-        current: img[0],
-        songName: img[1],
-        artistPlaying: img[2],
-        trackPlaying: img[3],
-        seenTracks: seen,
-        trackDuration: img[4],
-        tPos: img[5]
-      });
-      console.log(e);
-    }
-  };
-
-  activatePlay = async () => {
-    const token = await getData("accessToken");
-    const id = await getData("mmPlaylist");
-    Keyboard.dismiss();
-    try {
-      const uri = await this.apiGetContextUri(token);
-      if (
-        this.state.navigated ||
-        uri === "spotify:user:12168726728:playlist:" + id
-      ) {
-        await this.apiPutRegular(
-          "https://api.spotify.com/v1/me/player/play",
-          token
-        );
-        await this.activatePlayHelper(token, id);
-      } else {
-        try {
-          await this.apiPutNav(
-            "https://api.spotify.com/v1/me/player/play",
-            token,
-            id
-          );
-          await this.apiPutRegular(
-            "https://api.spotify.com/v1/me/player/play",
-            token
-          );
-          await this.activatePlayHelper(token);
-        } catch (e) {
-          const check =
-            e["response"] &&
-            e["response"]["data"] &&
-            e["response"]["data"]["error"] &&
-            e["response"]["data"]["error"]["status"];
-          if (check && e.response.data.error.status == 401) {
-            this.props.navigation.navigate("SpotifyLogin");
-          }
-          await this.activatePlayHelper(token);
-        }
-      }
-    } catch (e) {
-      const check =
-        e["response"] &&
-        e["response"]["data"] &&
-        e["response"]["data"]["error"] &&
-        e["response"]["data"]["error"]["status"];
-      if (check && e.response.data.error.status == 401) {
-        this.props.navigation.dispatch(
-          StackActions.push("SpotifyLogin", {
-            routeName: ""
-          })
-        );
-      } else {
-        Alert.alert("Please connect a spotify device");
-      }
-      console.log(e);
-    }
-  };
-
-  activatePause = async () => {
-    const token = await getData("accessToken");
-    Keyboard.dismiss();
-    try {
-      const img = await this.apiGetTrackImage(token);
-      await this.apiPutRegular(
-        "https://api.spotify.com/v1/me/player/pause",
-        token
-      );
-      const seen = this.initSeen
-        ? this.state.seenTracks
-        : await getData("seenTracks");
-      this.initSeen = true;
-      seen[img[3]] = true;
-      await setData("seenTracks", seen);
-      this.setState({
-        playing: false,
-        current: img[0],
-        songName: img[1],
-        artistPlaying: img[2],
-        trackPlaying: img[3],
-        seenTracks: seen,
-        trackDuration: img[4],
-        tPos: img[5]
-      });
-    } catch (e) {
-      const check =
-        e["response"] &&
-        e["response"]["data"] &&
-        e["response"]["data"]["error"] &&
-        e["response"]["data"]["error"]["status"];
-      if (check && e.response.data.error.status == 401) {
-        this.props.navigation.dispatch(
-          StackActions.push("SpotifyLogin", {
-            routeName: ""
-          })
-        );
-      } else {
-        Alert.alert("Please connect a spotify device");
-      }
-      console.log(e);
+      this.parseError(e);
     }
   };
 
