@@ -141,12 +141,12 @@ export default class SpotifyLogin extends React.Component {
           </TouchableOpacity>
         )}
 
-        {this.props.route.params.routeName === "HomeScreenTwo" ? (
+        {this.props.route.params.routeName === "HomeScreen" ? (
           <TouchableOpacity
             style={styles.button}
             onPress={() =>
               this.props.navigation.dispatch(
-                StackActions.replace("HomeScreenTwo")
+                StackActions.replace("HomeScreen")
               )
             }
           >
