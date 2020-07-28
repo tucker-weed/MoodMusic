@@ -144,7 +144,7 @@ export default class PlayerController {
       uri === "spotify:user:12168726728:playlist:" + id
     ) {
       await apiPut("https://api.spotify.com/v1/me/player/play", this.token);
-      return await this. _extractPlayData(seenTracks);
+      return await this._extractPlayData(seenTracks);
     } else {
       await apiPutNav(
         "https://api.spotify.com/v1/me/player/play",
@@ -152,7 +152,7 @@ export default class PlayerController {
         id
       );
       await apiPut("https://api.spotify.com/v1/me/player/play", this.token);
-      return await this. _extractPlayData(seenTracks);
+      return await this._extractPlayData(seenTracks);
     }
   };
 

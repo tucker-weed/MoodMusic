@@ -78,7 +78,6 @@ export default class SongEngine {
       features[index].tempo > this.state.tempo &&
       euphoria > Math.abs(this.state.euphoria) &&
       hype > Math.abs(this.state.hype) &&
-      (!this.state.isEnabled || features[index].key == this.state.key) &&
       !this.seenSongs[features[index].id];
     const filtered_popularity_song =
       data["items"] &&
@@ -144,7 +143,7 @@ export default class SongEngine {
       trackIds.push(tracks[i].id);
     }
 
-    return [trackIds, response];
+    return { trackIds: trackIds, response: response };
   };
 
   /**
@@ -175,10 +174,10 @@ export default class SongEngine {
       songsAndResponse =
         idAccum.length > 0 ? await this._getSeededRecs(idAccum, false) : null;
 
-      if (songsAndResponse && songsAndResponse[0].length > 0) {
+      if (songsAndResponse && songsAndResponse["trackIds"].length > 0) {
         const filtered = await this._collectFilteredSongs(
-          songsAndResponse[1].data,
-          songsAndResponse[0]
+          songsAndResponse["response"].data,
+          songsAndResponse["trackIds"]
         );
         const uniqueSongs = [];
         for (let i = 0; i < filtered.length; i++) {
@@ -200,6 +199,37 @@ export default class SongEngine {
   };
 
   /**
+   * Produces related artists from an Array of artists
+   *
+   * @param artistIds - an Array of strings, being artist IDs
+   * @param max - maximum length allowed for Array to return
+   * @returns - an Array of strings, being related artist IDs
+   */
+  _getRelatedArtists = async (artistIds, max) => {
+    let relatedArtists = [];
+    const addedArtists = {};
+    for (let a = 0; a < artistIds.length && relatedArtists.length < max; a++) {
+      const url =
+        "https://api.spotify.com/v1/artists/" +
+        artistIds[a] +
+        "/related-artists";
+      const response = await this._apiGet(url);
+
+      if (response && response.data.artists[0]) {
+        const responseArtists = response.data.artists;
+        this._shuffleArray(responseArtists);
+        for (let i = 0; i < responseArtists.length; i++) {
+          if (!addedArtists[responseArtists[i].id]) {
+            relatedArtists.push(responseArtists[i].id);
+            addedArtists[responseArtists[i].id] = true;
+          }
+        }
+      }
+    }
+    return relatedArtists;
+  };
+
+  /**
    * Main entry point for interaction with the spotify api
    *
    * @param mode - a string, either 'filter' or 'create'
@@ -211,8 +241,8 @@ export default class SongEngine {
       "https://api.spotify.com/v1/playlists/" + this.playlistId + "/tracks";
     const response = await this._apiGet(url);
     const playlistItems = response.data.items;
-    const artistIds = [];
-    const addedArtists = {};
+    let artistIds = [];
+    let addedArtists = {};
     let playlistToReturn;
 
     for (let i = 0; i < playlistItems.length; i++) {
@@ -242,10 +272,18 @@ export default class SongEngine {
         idString
       );
     } else if (mode === "create" && artistSeeds) {
+      if (this.state.lookForRelated) {
+        const relatedArtists = await this._getRelatedArtists(artistIds, 150);
+        artistIds = relatedArtists;
+      }
       artistIds.unshift(...artistSeeds);
       this._shuffleArray(artistIds);
       playlistToReturn = await this._artistsToPlaylist(artistIds);
     } else if (mode === "create") {
+      if (this.state.lookForRelated) {
+        const relatedArtists = await this._getRelatedArtists(artistIds, 150);
+        artistIds = relatedArtists;
+      }
       this._shuffleArray(artistIds);
       playlistToReturn = await this._artistsToPlaylist(artistIds);
     } else {

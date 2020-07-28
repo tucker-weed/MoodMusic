@@ -12,29 +12,19 @@ export default class PlaylistCreator extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      isEnabled: false,
-      isEnabled2: false,
-      majMin: 0,
       creating: false,
       init: false,
       tempo: 0,
       euphoria: 0,
       hype: 0,
       key: 0,
-      sPopularity: 0
+      sPopularity: 0,
+      lookForRelated: false
     };
   }
 
   toggleSwitch = () => {
-    this.setState({ isEnabled: !this.state.isEnabled });
-  };
-
-  toggleSwitch2 = () => {
-    this.setState({ majMin: this.state.majMin == 0 ? 1 : 0 });
-  };
-
-  toggleSwitch3 = () => {
-    this.setState({ isEnabled2: !this.state.isEnabled2 });
+    this.setState({ lookForRelated: !this.state.lookForRelated });
   };
 
   activateAlgorithm = async which => {
@@ -147,12 +137,18 @@ export default class PlaylistCreator extends React.Component {
           <MytextTwo
             text={
               this.state.euphoria >= 0
-                ? "Euphoria: " + this.state.euphoria
-                : "Dark: " + Math.abs(this.state.euphoria)
+                ? "Euphoria: " +
+                  (this.state.euphoria < 10
+                    ? 0
+                    : Math.ceil(this.state.euphoria / 10))
+                : "Dark: " +
+                  (this.state.euphoria > -10
+                    ? 0
+                    : Math.ceil(Math.abs(this.state.euphoria) / 10))
             }
           />
           <Slider
-            style={{ width: 300, height: 20 }}
+            style={{ width: 300, height: 40 }}
             minimumValue={-100}
             maximumValue={100}
             disabled={this.state.creating ? true : false}
@@ -165,12 +161,16 @@ export default class PlaylistCreator extends React.Component {
           <MytextTwo
             text={
               this.state.hype >= 0
-                ? "Hype: " + this.state.hype
-                : "Chill: " + Math.abs(this.state.hype)
+                ? "Hype: " +
+                  (this.state.hype < 10 ? 0 : Math.ceil(this.state.hype / 10))
+                : "Chill: " +
+                  (this.state.hype > -10
+                    ? 0
+                    : Math.ceil(Math.abs(this.state.hype) / 10))
             }
           />
           <Slider
-            style={{ width: 300, height: 20 }}
+            style={{ width: 300, height: 40 }}
             minimumValue={-200}
             maximumValue={200}
             disabled={this.state.creating ? true : false}
@@ -182,7 +182,7 @@ export default class PlaylistCreator extends React.Component {
         <View style={localStyles.container}>
           <Mytext text={"Song Popularity: " + this.state.sPopularity} />
           <Slider
-            style={{ width: 300, height: 20 }}
+            style={{ width: 300, height: 40 }}
             minimumValue={0}
             maximumValue={100}
             disabled={this.state.creating ? true : false}
@@ -196,7 +196,7 @@ export default class PlaylistCreator extends React.Component {
         <View style={localStyles.container}>
           <Mytext text={"Tempo: " + this.state.tempo} />
           <Slider
-            style={{ width: 300, height: 20 }}
+            style={{ width: 300, height: 40 }}
             minimumValue={0}
             maximumValue={200}
             disabled={this.state.creating ? true : false}
@@ -206,40 +206,15 @@ export default class PlaylistCreator extends React.Component {
           />
         </View>
         <View style={localStyles.container}>
-          <Mytext text={"Key: " + this.state.key} />
-          <Mytext text={"Key Switch - Major/Minor - Key Slider"} />
+          <Mytext text="Expanded Search" />
           <Switch
-            trackColor={{ false: "#767577", true: "#81b0ff" }}
-            thumbColor="#f4f3f4"
-            disabled={this.state.creating ? true : false}
-            ios_backgroundColor="#3e3e3e"
-            onValueChange={this.toggleSwitch3}
-            value={this.state.isEnabled2}
-          />
-          <Switch
-            trackColor={{ false: "#767577", true: "#81b0ff" }}
-            thumbColor="#f4f3f4"
-            disabled={this.state.creating ? true : false}
-            ios_backgroundColor="#3e3e3e"
-            onValueChange={this.toggleSwitch2}
-            value={this.state.majMin == 0 ? false : true}
-          />
-          <Switch
+            style={{ marginBottom: 20 }}
             trackColor={{ false: "#767577", true: "#81b0ff" }}
             thumbColor="#f4f3f4"
             disabled={this.state.creating ? true : false}
             ios_backgroundColor="#3e3e3e"
             onValueChange={this.toggleSwitch}
-            value={this.state.isEnabled}
-          />
-          <Slider
-            style={{ width: 300, height: 20 }}
-            minimumValue={0}
-            maximumValue={11}
-            disabled={this.state.creating ? true : false}
-            minimumTrackTintColor="#FFFFFF"
-            maximumTrackTintColor="#000000"
-            onValueChange={val => this.setState({ key: Math.round(val) })}
+            value={this.state.lookForRelated}
           />
         </View>
       </View>

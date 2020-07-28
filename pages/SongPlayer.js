@@ -122,11 +122,11 @@ export default class SongPlayer extends React.Component {
       await setData("seenTracks", seen);
       this.setState({
         playing: true,
-        current: trackData['current'],
-        songName: trackData['songName'],
-        artistPlaying: trackData['artistPlaying'],
-        trackPlaying: trackData['trackPlaying'],
-        trackDuration: trackData['trackDuration'],
+        current: trackData["current"],
+        songName: trackData["songName"],
+        artistPlaying: trackData["artistPlaying"],
+        trackPlaying: trackData["trackPlaying"],
+        trackDuration: trackData["trackDuration"],
         seenTracks: seen,
         tPos: 0
       });
@@ -148,11 +148,11 @@ export default class SongPlayer extends React.Component {
       await setData("seenTracks", seen);
       this.setState({
         playing: true,
-        current: trackData['current'],
-        songName: trackData['songName'],
-        artistPlaying: trackData['artistPlaying'],
-        trackPlaying: trackData['trackPlaying'],
-        trackDuration: trackData['trackDuration'],
+        current: trackData["current"],
+        songName: trackData["songName"],
+        artistPlaying: trackData["artistPlaying"],
+        trackPlaying: trackData["trackPlaying"],
+        trackDuration: trackData["trackDuration"],
         seenTracks: seen,
         tPos: 0
       });
@@ -195,13 +195,13 @@ export default class SongPlayer extends React.Component {
       this.setState({
         navigated: true,
         playing: true,
-        current: trackData['current'],
-        songName: trackData['songName'],
-        artistPlaying: trackData['artistPlaying'],
-        trackPlaying: trackData['trackPlaying'],
-        trackDuration: trackData['trackDuration'],
+        current: trackData["current"],
+        songName: trackData["songName"],
+        artistPlaying: trackData["artistPlaying"],
+        trackPlaying: trackData["trackPlaying"],
+        trackDuration: trackData["trackDuration"],
         seenTracks: seen,
-        tPos: trackData['tPos']
+        tPos: trackData["tPos"]
       });
     } catch (e) {
       this.parseError(e);
@@ -219,13 +219,13 @@ export default class SongPlayer extends React.Component {
       await setData("seenTracks", seen);
       this.setState({
         playing: false,
-        current: trackData['current'],
-        songName: trackData['songName'],
-        artistPlaying: trackData['artistPlaying'],
-        trackPlaying: trackData['trackPlaying'],
-        trackDuration: trackData['trackDuration'],
+        current: trackData["current"],
+        songName: trackData["songName"],
+        artistPlaying: trackData["artistPlaying"],
+        trackPlaying: trackData["trackPlaying"],
+        trackDuration: trackData["trackDuration"],
         seenTracks: seen,
-        tPos: trackData['tPos']
+        tPos: trackData["tPos"]
       });
     } catch (e) {
       this.parseError(e);

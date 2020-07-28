@@ -132,7 +132,7 @@ export const apiPut = async (url, token) => {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json;charset=UTF-8",
-        'Access-Control-Allow-Origin': '*'
+        "Access-Control-Allow-Origin": "*"
       }
     }
   );

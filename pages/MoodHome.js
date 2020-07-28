@@ -125,9 +125,7 @@ export default class MoodHome extends React.Component {
         <TouchableOpacity
           style={styles.button}
           onPress={() =>
-            this.props.navigation.dispatch(
-              StackActions.replace("HomeScreen")
-            )
+            this.props.navigation.dispatch(StackActions.replace("HomeScreen"))
           }
         >
           <Text style={styles.buttonText}>Back to Home</Text>
@@ -183,7 +181,7 @@ export default class MoodHome extends React.Component {
                       StackActions.replace("PlaylistCreator", {
                         pName: item.name,
                         triggerRadioLoad: false,
-                        targetRadio: ''
+                        targetRadio: ""
                       })
                     );
                   }}
