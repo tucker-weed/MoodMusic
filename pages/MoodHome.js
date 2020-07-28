@@ -1,10 +1,10 @@
 import React from "react";
 import { FlatList, TouchableOpacity, Text, View, Image } from "react-native";
 import { StackActions } from "@react-navigation/native";
-import axios from "axios";
 
 import { styles } from "../Styles.js";
 import { setData, getData } from "../LocalStorage.js";
+import { apiPost, apiGet } from "../APIfunctions.js";
 
 export default class MoodHome extends React.Component {
   constructor(props) {
@@ -16,41 +16,6 @@ export default class MoodHome extends React.Component {
       radios: null
     };
   }
-
-  /**
-   * Requests information based on url and gives a response
-   *
-   * @param url - the url of the spotify api with a given endpoint
-   * @param token - the authorization token to pass to the api
-   * @returns - a json object being the api response, or null
-   */
-  apiGet = async (url, token) => {
-    return await axios.get(url, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-  };
-
-  apiPost = async (url, token) => {
-    const jsonData = {
-      name: "MoodMusicPlaylist",
-      public: true
-    };
-    return await axios.post(
-      url,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json;charset=UTF-8",
-          "Access-Control-Allow-Origin": "*"
-        },
-        data: jsonData,
-        dataType: "json"
-      }
-    );
-  };
 
   activate = async () => {
     const data = this.state.userInfo
@@ -67,12 +32,12 @@ export default class MoodHome extends React.Component {
       if (!cacheId) {
         const url =
           "https://api.spotify.com/v1/users/" + data.id + "/playlists";
-        const response = await this.apiPost(url, access);
+        const response = await apiPost(url, access);
         await setData("mmPlaylist", response.data.id);
       }
 
       const url = "https://api.spotify.com/v1/users/" + data.id + "/playlists";
-      const response = await this.apiGet(url, access);
+      const response = await apiGet(url, access);
 
       this.setState({
         playlists: response.data.items,
@@ -112,7 +77,7 @@ export default class MoodHome extends React.Component {
 
     try {
       const url = "https://api.spotify.com/v1/users/" + data.id;
-      await this.apiGet(url, access);
+      await apiGet(url, access);
       const radioHistory = await getData("AllRadioHistory");
       if (cacheId && radioHistory) {
         const radios = Array.from(Object.keys(radioHistory));
@@ -161,7 +126,7 @@ export default class MoodHome extends React.Component {
           style={styles.button}
           onPress={() =>
             this.props.navigation.dispatch(
-              StackActions.replace("HomeScreenTwo")
+              StackActions.replace("HomeScreen")
             )
           }
         >

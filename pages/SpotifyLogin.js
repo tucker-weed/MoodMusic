@@ -79,7 +79,7 @@ export default class SpotifyLogin extends React.Component {
       await setData("userId", userInfo.data.id);
       await setData("accessToken", results.params.access_token);
       const routeName = this.props.route.params.routeName;
-      if (routeName === "HomeScreenTwo")
+      if (routeName === "HomeScreen")
         this.setState({
           userInfo: userInfo.data,
           token: results.params.access_token

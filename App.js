@@ -3,15 +3,9 @@ import { createStackNavigator } from "@react-navigation/stack";
 import React from "react";
 
 import HomeScreen from "./pages/HomeScreen.js";
-import RegisterUser from "./pages/RegisterUser.js";
-import UpdateUser from "./pages/UpdateUser.js";
-import ViewAllUser from "./pages/ViewAllUser.js";
-import DeleteUser from "./pages/DeleteUser.js";
-import LoginPage from "./pages/LoginPage.js";
 import SpotifyLogin from "./pages/SpotifyLogin.js";
 import MoodHome from "./pages/MoodHome.js";
 import PlaylistCreator from "./pages/PlaylistCreator.js";
-import HomeScreenTwo from "./pages/HomeScreenTwo.js";
 import PlaylistResults from "./pages/PlaylistResults.js";
 import SongPlayer from "./pages/SongPlayer.js";
 
@@ -26,60 +20,6 @@ function MainStackNavigator() {
           component={HomeScreen}
           options={{
             title: "Mood Music",
-            headerStyle: { backgroundColor: "#008080" },
-            headerTintColor: "white"
-          }}
-        />
-        <Stack.Screen
-          name="HomeScreenTwo"
-          component={HomeScreenTwo}
-          options={{
-            title: "Mood Music",
-            headerStyle: { backgroundColor: "#008080" },
-            headerTintColor: "white"
-          }}
-        />
-        <Stack.Screen
-          name="ViewAll"
-          component={ViewAllUser}
-          options={{
-            title: "User Information",
-            headerStyle: { backgroundColor: "#008080" },
-            headerTintColor: "white"
-          }}
-        />
-        <Stack.Screen
-          name="Update"
-          component={UpdateUser}
-          options={{
-            title: "Update User",
-            headerStyle: { backgroundColor: "#008080" },
-            headerTintColor: "white"
-          }}
-        />
-        <Stack.Screen
-          name="Register"
-          component={RegisterUser}
-          options={{
-            title: "Register User",
-            headerStyle: { backgroundColor: "#008080" },
-            headerTintColor: "white"
-          }}
-        />
-        <Stack.Screen
-          name="Delete"
-          component={DeleteUser}
-          options={{
-            title: "Delete User",
-            headerStyle: { backgroundColor: "#008080" },
-            headerTintColor: "white"
-          }}
-        />
-        <Stack.Screen
-          name="Login"
-          component={LoginPage}
-          options={{
-            title: "Login Page",
             headerStyle: { backgroundColor: "#008080" },
             headerTintColor: "white"
           }}

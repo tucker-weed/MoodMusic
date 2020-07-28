@@ -10,7 +10,6 @@ import {
   StyleSheet,
   Switch
 } from "react-native";
-import axios from "axios";
 import Slider from "@react-native-community/slider";
 import { ButtonOne } from "../components/MyButtons.js";
 import { styles } from "../Styles.js";
@@ -21,6 +20,7 @@ import { Mytext } from "../components/Mytext.js";
 import SongEngine from "../SongEngine.js";
 import PlayerController from "../PlayerController.js";
 import { StackActions } from "@react-navigation/native";
+import { apiPutTracks, apiPut } from "../APIfunctions.js";
 
 export default class SongPlayer extends React.Component {
   constructor(props) {
@@ -34,6 +34,7 @@ export default class SongPlayer extends React.Component {
         reload: false,
         init: false,
         playlistName: "",
+        songName: null,
         likes: 0,
         artistPlaying: null,
         trackPlaying: null,
@@ -45,39 +46,6 @@ export default class SongPlayer extends React.Component {
         shuffle: false
       });
   }
-
-  apiPut = async (url, token, trackIds) => {
-    const jsonData = {
-      uris: trackIds
-    };
-    return await axios.put(
-      url,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json;charset=UTF-8",
-          "Access-Control-Allow-Origin": "*"
-        },
-        data: jsonData,
-        dataType: "json"
-      }
-    );
-  };
-
-  apiPutRegular = async (url, token) => {
-    return await axios.put(
-      url,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json;charset=UTF-8",
-          "Access-Control-Allow-Origin": "*"
-        }
-      }
-    );
-  };
 
   parseError = err => {
     console.log(err);
@@ -92,7 +60,7 @@ export default class SongPlayer extends React.Component {
           routeName: ""
         })
       );
-    } else {
+    } else if (check && err.response.data.error.status == 404) {
       Alert.alert("Please connect a spotify device");
     }
   };
@@ -142,6 +110,9 @@ export default class SongPlayer extends React.Component {
   };
 
   activateNext = async () => {
+    if (!this.state.songName) {
+      return;
+    }
     const token = await getData("accessToken");
     const controller = new PlayerController(this.initSeen, this.state, token);
     try {
@@ -151,11 +122,11 @@ export default class SongPlayer extends React.Component {
       await setData("seenTracks", seen);
       this.setState({
         playing: true,
-        current: trackData[0],
-        songName: trackData[1],
-        artistPlaying: trackData[2],
-        trackPlaying: trackData[3],
-        trackDuration: trackData[4],
+        current: trackData['current'],
+        songName: trackData['songName'],
+        artistPlaying: trackData['artistPlaying'],
+        trackPlaying: trackData['trackPlaying'],
+        trackDuration: trackData['trackDuration'],
         seenTracks: seen,
         tPos: 0
       });
@@ -165,6 +136,9 @@ export default class SongPlayer extends React.Component {
   };
 
   activateBack = async () => {
+    if (!this.state.songName) {
+      return;
+    }
     const token = await getData("accessToken");
     const controller = new PlayerController(this.initSeen, this.state, token);
     try {
@@ -174,12 +148,12 @@ export default class SongPlayer extends React.Component {
       await setData("seenTracks", seen);
       this.setState({
         playing: true,
-        current: trackData[0],
-        songName: trackData[1],
-        artistPlaying: trackData[2],
-        trackPlaying: trackData[3],
+        current: trackData['current'],
+        songName: trackData['songName'],
+        artistPlaying: trackData['artistPlaying'],
+        trackPlaying: trackData['trackPlaying'],
+        trackDuration: trackData['trackDuration'],
         seenTracks: seen,
-        trackDuration: trackData[4],
         tPos: 0
       });
     } catch (e) {
@@ -189,13 +163,13 @@ export default class SongPlayer extends React.Component {
 
   activateLoadTracks = async () => {
     const token = await getData("accessToken");
-    const radA = await getData("radioArtists");
-    const radT = await getData("radioTracks");
+    const radioA = await getData("radioArtists");
+    const radioT = await getData("radioTracks");
     const controller = new PlayerController(this.initSeen, this.state, token);
     try {
       const { songs, trackLikes, artistLikes } = await controller.load(
-        radA,
-        radT
+        radioA,
+        radioT
       );
       this.setState({
         playlist: songs,
@@ -221,13 +195,13 @@ export default class SongPlayer extends React.Component {
       this.setState({
         navigated: true,
         playing: true,
-        current: trackData[0],
-        songName: trackData[1],
-        artistPlaying: trackData[2],
-        trackPlaying: trackData[3],
+        current: trackData['current'],
+        songName: trackData['songName'],
+        artistPlaying: trackData['artistPlaying'],
+        trackPlaying: trackData['trackPlaying'],
+        trackDuration: trackData['trackDuration'],
         seenTracks: seen,
-        trackDuration: trackData[4],
-        tPos: trackData[5]
+        tPos: trackData['tPos']
       });
     } catch (e) {
       this.parseError(e);
@@ -245,13 +219,13 @@ export default class SongPlayer extends React.Component {
       await setData("seenTracks", seen);
       this.setState({
         playing: false,
-        current: trackData[0],
-        songName: trackData[1],
-        artistPlaying: trackData[2],
-        trackPlaying: trackData[3],
+        current: trackData['current'],
+        songName: trackData['songName'],
+        artistPlaying: trackData['artistPlaying'],
+        trackPlaying: trackData['trackPlaying'],
+        trackDuration: trackData['trackDuration'],
         seenTracks: seen,
-        trackDuration: trackData[4],
-        tPos: trackData[5]
+        tPos: trackData['tPos']
       });
     } catch (e) {
       this.parseError(e);
@@ -297,7 +271,7 @@ export default class SongPlayer extends React.Component {
         await setData("playlistData", playlist);
         await setData("radioTracks", replaceTracks);
         await setData("radioArtists", replace);
-        await this.apiPut(url, token, ids);
+        await apiPutTracks(url, token, ids);
         Alert.alert("Upvoted Song - Updating Seed...");
         this.setState({
           trackLikes: replaceTracks,
@@ -423,7 +397,7 @@ export default class SongPlayer extends React.Component {
                   const url =
                     "https://api.spotify.com/v1/me/player/seek?position_ms=" +
                     Math.round(val * 1000);
-                  await this.apiPutRegular(url, token);
+                  await apiPut(url, token);
                 }
               }}
             />

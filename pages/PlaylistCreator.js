@@ -1,5 +1,4 @@
 import React from "react";
-import axios from "axios";
 import { StyleSheet, TouchableOpacity, Text, View, Switch } from "react-native";
 import { StackActions } from "@react-navigation/native";
 import Slider from "@react-native-community/slider";
@@ -25,21 +24,6 @@ export default class PlaylistCreator extends React.Component {
       sPopularity: 0
     };
   }
-
-  /**
-   * Requests information based on url and gives a response
-   *
-   * @param url - the url of the spotify api with a given endpoint
-   * @param token - the authorization token to pass to the api
-   * @returns - a json object being the api response, or null
-   */
-  apiGet = async (url, token) => {
-    return await axios.get(url, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-  };
 
   toggleSwitch = () => {
     this.setState({ isEnabled: !this.state.isEnabled });

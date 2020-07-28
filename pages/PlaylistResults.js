@@ -1,11 +1,11 @@
 import React from "react";
 import { FlatList, TouchableOpacity, Text, View, Image } from "react-native";
-import axios from "axios";
 
 import { styles } from "../Styles.js";
 import { getData } from "../LocalStorage.js";
 import { StackActions } from "@react-navigation/native";
 import { Mytext } from "../components/Mytext.js";
+import { apiPutTracks } from "../APIfunctions.js";
 
 export default class PlaylistResults extends React.Component {
   constructor(props) {
@@ -17,40 +17,6 @@ export default class PlaylistResults extends React.Component {
       returning: false
     };
   }
-
-  /**
-   * Requests information based on url and gives a response
-   *
-   * @param url - the url of the spotify api with a given endpoint
-   * @param token - the authorization token to pass to the api
-   * @returns - a json object being the api response, or null
-   */
-  apiGet = async (url, token) => {
-    return await axios.get(url, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-  };
-
-  apiPut = async (url, token, trackIds) => {
-    const jsonData = {
-      uris: trackIds
-    };
-    return await axios.put(
-      url,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json;charset=UTF-8",
-          "Access-Control-Allow-Origin": "*"
-        },
-        data: jsonData,
-        dataType: "json"
-      }
-    );
-  };
 
   activate = async () => {
     const data = await getData("userData");
@@ -69,7 +35,7 @@ export default class PlaylistResults extends React.Component {
               (playlist[i]["track"] ? playlist[i].track.id : playlist[i].id)
           );
         }
-        await this.apiPut(url, token, ids);
+        await apiPutTracks(url, token, ids);
       }
       this.setState({ userInfo: data, token: token, playlist: playlist });
     } catch (e) {
