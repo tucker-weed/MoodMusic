@@ -3,10 +3,10 @@ import { StyleSheet, TouchableOpacity, Text, View, Switch } from "react-native";
 import { StackActions } from "@react-navigation/native";
 import Slider from "@react-native-community/slider";
 
-import { Mytext, MytextTwo } from "../components/Mytext.js";
-import SongEngine from "../SongEngine.js";
-import { getData, setData } from "../LocalStorage.js";
 import { styles } from "../Styles.js";
+import { Mytext, MytextTwo } from "../components/Mytext.js";
+import SongEngine from "../brain/SongEngine.js";
+import { getData, setData } from "../brain/LocalStorage.js";
 
 export default class PlaylistCreator extends React.Component {
   constructor(props) {

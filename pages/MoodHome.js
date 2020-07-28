@@ -3,8 +3,8 @@ import { FlatList, TouchableOpacity, Text, View, Image } from "react-native";
 import { StackActions } from "@react-navigation/native";
 
 import { styles } from "../Styles.js";
-import { setData, getData } from "../LocalStorage.js";
-import { apiPost, apiGet } from "../APIfunctions.js";
+import { setData, getData } from "../brain/LocalStorage.js";
+import { apiPost, apiGet } from "../brain/APIfunctions.js";
 
 export default class MoodHome extends React.Component {
   constructor(props) {

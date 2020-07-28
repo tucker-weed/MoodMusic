@@ -6,7 +6,7 @@ import { FontAwesome } from "@expo/vector-icons";
 import axios from "axios";
 
 import { styles } from "../Styles.js";
-import { setData } from "../LocalStorage.js";
+import { setData } from "../brain/LocalStorage.js";
 const CLIENT_ID = "bc4798c9fb304cbc83425e514fa4e986";
 
 /**

@@ -11,16 +11,17 @@ import {
   Switch
 } from "react-native";
 import Slider from "@react-native-community/slider";
-import { ButtonOne } from "../components/MyButtons.js";
+import { StackActions } from "@react-navigation/native";
+
 import { styles } from "../Styles.js";
-import { setData, getData } from "../LocalStorage.js";
+import { ButtonOne } from "../components/MyButtons.js";
 import Mytextinput from "../components/Mytextinput.js";
 import { PlayerButton } from "../components/MyButtons.js";
 import { Mytext } from "../components/Mytext.js";
-import SongEngine from "../SongEngine.js";
-import PlayerController from "../PlayerController.js";
-import { StackActions } from "@react-navigation/native";
-import { apiPutTracks, apiPut } from "../APIfunctions.js";
+import { setData, getData } from "../brain/LocalStorage.js";
+import { apiPutTracks, apiPut } from "../brain/APIfunctions.js";
+import SongEngine from "../brain/SongEngine.js";
+import PlayerController from "../brain/PlayerController.js";
 
 export default class SongPlayer extends React.Component {
   constructor(props) {

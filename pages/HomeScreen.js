@@ -1,12 +1,13 @@
 import React from "react";
 import { View } from "react-native";
-import { LoginButton } from "../components/MyButtons.js";
 import { StackActions } from "@react-navigation/native";
 import { FontAwesome } from "@expo/vector-icons";
-import { Mytext } from "../components/Mytext.js";
-import { getData } from "../LocalStorage.js";
-import { apiGet } from "../APIfunctions.js";
+
 import { styles } from "../Styles.js";
+import { LoginButton } from "../components/MyButtons.js";
+import { Mytext } from "../components/Mytext.js";
+import { getData } from "../brain/LocalStorage.js";
+import { apiGet } from "../brain/APIfunctions.js";
 
 export default class HomeScreen extends React.Component {
   constructor(props) {

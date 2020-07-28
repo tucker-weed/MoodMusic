@@ -1,11 +1,11 @@
 import React from "react";
 import { FlatList, TouchableOpacity, Text, View, Image } from "react-native";
+import { StackActions } from "@react-navigation/native";
 
 import { styles } from "../Styles.js";
-import { getData } from "../LocalStorage.js";
-import { StackActions } from "@react-navigation/native";
 import { Mytext } from "../components/Mytext.js";
-import { apiPutTracks } from "../APIfunctions.js";
+import { getData } from "../brain/LocalStorage.js";
+import { apiPutTracks } from "../brain/APIfunctions.js";
 
 export default class PlaylistResults extends React.Component {
   constructor(props) {
