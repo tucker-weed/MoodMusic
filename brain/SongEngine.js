@@ -1,4 +1,5 @@
 import axios from "axios";
+import PriorityQueue from "./PriorityQueue.js";
 
 /**
  * SongEngine class contains methods which filter or produce songs on spotify
@@ -201,12 +202,12 @@ export default class SongEngine {
    * Produces related artists from an Array of artists
    *
    * @param artistIds - an Array of strings, being artist IDs
+   * @param addedArtists - json data containing already considered artists
    * @param max - maximum length allowed for Array to return
    * @returns - an Array of strings, being related artist IDs
    */
-  _getRelatedArtists = async (artistIds, max) => {
+  _getRelatedArtists = async (artistIds, addedArtists, max) => {
     const relatedArtists = [];
-    const addedArtists = {};
     const originalArtists = artistIds.slice(
       0,
       Math.round(artistIds.length / 3)
@@ -230,12 +231,17 @@ export default class SongEngine {
 
       if (response && response.data.artists[0]) {
         const responseArtists = response.data.artists;
+        const relatedPopularity = new PriorityQueue("popularity");
         this._shuffleArray(responseArtists);
         for (let i = 0; i < responseArtists.length; i++) {
           if (!addedArtists[responseArtists[i].id]) {
-            relatedArtists.push(responseArtists[i].id);
-            addedArtists[responseArtists[i].id] = true;
+            relatedPopularity.enqueue(responseArtists[i]);
           }
+        }
+        for (let i = 0; i < relatedPopularity.numItems && i < 5; i++) {
+          const relID = relatedPopularity.dequeue().id;
+          relatedArtists.push(relID);
+          addedArtists[relID] = true;
         }
       }
     }
@@ -287,7 +293,7 @@ export default class SongEngine {
       );
     } else if (mode === "create" && artistSeeds) {
       if (this.state.lookForRelated) {
-        const relatedArtists = await this._getRelatedArtists(artistIds, 150);
+        const relatedArtists = await this._getRelatedArtists(artistIds, addedArtists, 150);
         artistIds = relatedArtists;
       }
       artistIds.unshift(...artistSeeds);
@@ -295,7 +301,7 @@ export default class SongEngine {
       playlistToReturn = await this._artistsToPlaylist(artistIds);
     } else if (mode === "create") {
       if (this.state.lookForRelated) {
-        const relatedArtists = await this._getRelatedArtists(artistIds, 150);
+        const relatedArtists = await this._getRelatedArtists(artistIds, addedArtists, 150);
         artistIds = relatedArtists;
       }
       this._shuffleArray(artistIds);
