@@ -24,7 +24,7 @@ export default class SongEngine {
    * Requests information based on url and gives a response
    *
    * @param url - the url of the spotify api with a given endpoint
-   * @returns - a json object being the api response, or an error
+   * @returns - json data being the api response, or an error
    */
   _apiGet = async url => {
     return await axios.get(url, {
@@ -63,7 +63,7 @@ export default class SongEngine {
    * @param features - an Array of track audio features
    * @param index - index of target feature
    * @param data - an Array of track json data
-   * @returns - track json data if it passed filters, null otherwise
+   * @returns - track json data if filters passed, null otherwise
    */
   _applyFilter = (features, index, data) => {
     const euphoria =
@@ -125,9 +125,8 @@ export default class SongEngine {
   /**
    * Takes an array of 2 seed IDs and produces 100 recommendations
    *
-   * @param artistIds - an array of artist ID strings
-   * @returns - a two element array, with index 0 being an array of track ID
-   *            strings, and with index 1 being Track Info json
+   * @param artistIds - an Array of artist ID strings
+   * @returns - json data with trackIds and response fields
    */
   _getSeededRecs = async artistIds => {
     const idString = artistIds.join(",");
@@ -149,7 +148,7 @@ export default class SongEngine {
   /**
    * Takes an array of Artist json and produces 100 track IDs
    *
-   * @param artistIds - an array of artist ID strings
+   * @param artistIds - an Array of artist ID strings
    */
   _artistsToPlaylist = async artistIds => {
     const start = new Date().getTime();
@@ -206,8 +205,22 @@ export default class SongEngine {
    * @returns - an Array of strings, being related artist IDs
    */
   _getRelatedArtists = async (artistIds, max) => {
-    let relatedArtists = [];
+    const relatedArtists = [];
     const addedArtists = {};
+    const originalArtists = artistIds.slice(
+      0,
+      Math.round(artistIds.length / 3)
+    );
+    for (let i = 0; i < originalArtists.length; i++) {
+      if (!addedArtists[originalArtists[i].id]) {
+        relatedArtists.push(originalArtists[i]);
+        addedArtists[originalArtists[i].id] = true;
+      }
+    }
+    artistIds = artistIds.slice(
+      Math.round(artistIds.length / 3),
+      artistIds.length
+    );
     for (let a = 0; a < artistIds.length && relatedArtists.length < max; a++) {
       const url =
         "https://api.spotify.com/v1/artists/" +
@@ -226,6 +239,7 @@ export default class SongEngine {
         }
       }
     }
+    this._shuffleArray(relatedArtists);
     return relatedArtists;
   };
 

@@ -67,16 +67,17 @@ export default class SongPlayer extends React.Component {
   };
 
   saveRadioState = async () => {
+    Keyboard.dismiss();
     const radioHist = await getData("AllRadioHistory");
     const playlistId = await getData("playlistId");
     const token = await getData("accessToken");
     const controller = new PlayerController(this.initSeen, this.state, token);
     try {
-      const { newHist, msg } = await controller.updateRadioHistory(
+      const newHist = await controller.updateRadioHistory(
         radioHist,
         playlistId
       );
-      Alert.alert(msg);
+      Alert.alert("Saved Radio History: " + this.state.playlistName);
       await setData("AllRadioHistory", newHist);
     } catch (e) {
       this.parseError(e);
@@ -100,63 +101,58 @@ export default class SongPlayer extends React.Component {
     const userId = await getData("userId");
     const controller = new PlayerController(this.initSeen, this.state, token);
     try {
-      const msg = await controller.createPlaylist(
-        userId,
-        this.state.playlistName
-      );
-      Alert.alert(msg);
+      await controller.createPlaylist(userId);
+      Alert.alert("Created Playlist: " + this.state.playlistName);
     } catch (e) {
       this.parseError(e);
     }
   };
 
   activateNext = async () => {
-    if (!this.state.songName) {
-      return;
-    }
     const token = await getData("accessToken");
     const controller = new PlayerController(this.initSeen, this.state, token);
     try {
-      const savedSeen = await getData("seenTracks");
-      const { trackData, seen } = await controller.next(savedSeen);
-      this.initSeen = true;
-      await setData("seenTracks", seen);
-      this.setState({
-        playing: true,
-        current: trackData["current"],
-        songName: trackData["songName"],
-        artistPlaying: trackData["artistPlaying"],
-        trackPlaying: trackData["trackPlaying"],
-        trackDuration: trackData["trackDuration"],
-        seenTracks: seen,
-        tPos: 0
-      });
+      if (this.state.songName) {
+        const savedSeen = await getData("seenTracks");
+        const { trackData, seen } = await controller.next(savedSeen);
+        this.initSeen = true;
+        await setData("seenTracks", seen);
+        this.setState({
+          playing: true,
+          current: trackData["current"],
+          songName: trackData["songName"],
+          artistPlaying: trackData["artistPlaying"],
+          trackPlaying: trackData["trackPlaying"],
+          trackDuration: trackData["trackDuration"],
+          seenTracks: seen,
+          tPos: 0
+        });
+      }
     } catch (e) {
       this.parseError(e);
     }
   };
 
   activateBack = async () => {
-    if (!this.state.songName) {
-      return;
-    }
     const token = await getData("accessToken");
     const controller = new PlayerController(this.initSeen, this.state, token);
     try {
-      const savedSeen = await getData("seenTracks");
-      const { trackData, seen } = await controller.back(savedSeen);
-      this.initSeen = true;
-      await setData("seenTracks", seen);
-      this.setState({
-        playing: true,
-        current: trackData["current"],
-        songName: trackData["songName"],
-        artistPlaying: trackData["artistPlaying"],
-        trackPlaying: trackData["trackPlaying"],
-        trackDuration: trackData["trackDuration"],
-        seenTracks: seen,
-        tPos: 0
-      });
+      if (this.state.songName) {
+        const savedSeen = await getData("seenTracks");
+        const { trackData, seen } = await controller.back(savedSeen);
+        this.initSeen = true;
+        await setData("seenTracks", seen);
+        this.setState({
+          playing: true,
+          current: trackData["current"],
+          songName: trackData["songName"],
+          artistPlaying: trackData["artistPlaying"],
+          trackPlaying: trackData["trackPlaying"],
+          trackDuration: trackData["trackDuration"],
+          seenTracks: seen,
+          tPos: 0
+        });
+      }
     } catch (e) {
       this.parseError(e);
     }

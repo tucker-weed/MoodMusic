@@ -137,14 +137,8 @@ export default class PlaylistCreator extends React.Component {
           <MytextTwo
             text={
               this.state.euphoria >= 0
-                ? "Euphoria: " +
-                  (this.state.euphoria < 10
-                    ? 0
-                    : Math.ceil(this.state.euphoria / 10))
-                : "Dark: " +
-                  (this.state.euphoria > -10
-                    ? 0
-                    : Math.ceil(Math.abs(this.state.euphoria) / 10))
+                ? "Euphoria: " + Math.round(this.state.euphoria / 10)
+                : "Dark: " + Math.round(Math.abs(this.state.euphoria) / 10)
             }
           />
           <Slider
@@ -161,12 +155,8 @@ export default class PlaylistCreator extends React.Component {
           <MytextTwo
             text={
               this.state.hype >= 0
-                ? "Hype: " +
-                  (this.state.hype < 10 ? 0 : Math.ceil(this.state.hype / 10))
-                : "Chill: " +
-                  (this.state.hype > -10
-                    ? 0
-                    : Math.ceil(Math.abs(this.state.hype) / 10))
+                ? "Hype: " + Math.round(this.state.hype / 10)
+                : "Chill: " + Math.round(Math.abs(this.state.hype) / 10)
             }
           />
           <Slider

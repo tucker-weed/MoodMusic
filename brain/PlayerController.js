@@ -30,11 +30,7 @@ export default class PlayerController {
       trackLikes: trackLikes,
       seenTracks: seenTracks
     };
-    const data = {
-      newHist: radioHistory,
-      msg: "Saved Radio History: " + playlistName
-    };
-    return data;
+    return radioHistory;
   };
 
   toggleShuffle = async () => {
@@ -44,11 +40,15 @@ export default class PlayerController {
     await apiPut(url, this.token);
   };
 
-  createPlaylist = async (userId, name) => {
+  createPlaylist = async userId => {
+    const { playlistName } = this.state;
     const playlistUrl =
       "https://api.spotify.com/v1/users/" + userId + "/playlists";
-    const response = await apiPutNewPlaylist(playlistUrl, this.token, name);
-
+    const response = await apiPutNewPlaylist(
+      playlistUrl,
+      this.token,
+      playlistName
+    );
     const trackUrl =
       "https://api.spotify.com/v1/playlists/" + response.data.id + "/tracks";
     const uriList = [];
@@ -56,7 +56,6 @@ export default class PlayerController {
       uriList.push("spotify:track:" + this.state.trackLikes[i]);
     }
     await apiPutTracks(trackUrl, this.token, uriList);
-    return "Created Playlist: " + name;
   };
 
   next = async savedSeen => {
@@ -124,19 +123,6 @@ export default class PlayerController {
     }
   };
 
-  _extractPlayData = async seenTracks => {
-    let img;
-    for (let i = 0; i < 3; i++) {
-      img = await apiGetPlayingData(this.token);
-    }
-    const seen = this.initSeen ? this.state.seenTracks : seenTracks;
-    seen[img["trackPlaying"]] = true;
-    return {
-      trackData: img,
-      seen: seen
-    };
-  };
-
   play = async (id, seenTracks) => {
     const uri = await apiGetContextUri(this.token);
     if (
@@ -144,7 +130,16 @@ export default class PlayerController {
       uri === "spotify:user:12168726728:playlist:" + id
     ) {
       await apiPut("https://api.spotify.com/v1/me/player/play", this.token);
-      return await this._extractPlayData(seenTracks);
+      let playData;
+      for (let i = 0; i < 3; i++) {
+        playData = await apiGetPlayingData(this.token);
+      }
+      const seen = this.initSeen ? this.state.seenTracks : seenTracks;
+      seen[playData["trackPlaying"]] = true;
+      return {
+        trackData: playData,
+        seen: seen
+      };
     } else {
       await apiPutNav(
         "https://api.spotify.com/v1/me/player/play",
@@ -152,7 +147,16 @@ export default class PlayerController {
         id
       );
       await apiPut("https://api.spotify.com/v1/me/player/play", this.token);
-      return await this._extractPlayData(seenTracks);
+      let playData;
+      for (let i = 0; i < 3; i++) {
+        playData = await apiGetPlayingData(this.token);
+      }
+      const seen = this.initSeen ? this.state.seenTracks : seenTracks;
+      seen[playData["trackPlaying"]] = true;
+      return {
+        trackData: playData,
+        seen: seen
+      };
     }
   };
 
