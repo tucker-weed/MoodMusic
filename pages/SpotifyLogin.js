@@ -57,7 +57,9 @@ export default class SpotifyLogin extends React.Component {
       "user-modify-playback-state",
       "playlist-modify-private",
       "playlist-modify-public",
-      "user-library-read"
+      "user-library-read",
+      "playlist-read-collaborative",
+      "playlist-read-private"
     ];
     const redirectUrl = AuthSession.getRedirectUrl();
     const results = await AuthSession.startAsync({

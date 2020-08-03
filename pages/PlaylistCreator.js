@@ -30,9 +30,9 @@ export default class PlaylistCreator extends React.Component {
   activateAlgorithm = async which => {
     const that = this;
     try {
-      const token = await getData("accessToken");
       const triggerRadioLoad = this.props.route.params.triggerRadioLoad;
       const id = await getData("playlistId");
+      const token = await getData("accessToken");
 
       if (which !== "ignoreAlgorithm") {
         this.setState({ creating: true });

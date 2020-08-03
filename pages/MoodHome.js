@@ -125,6 +125,16 @@ export default class MoodHome extends React.Component {
         <TouchableOpacity
           style={styles.button}
           onPress={() =>
+            this.props.navigation.dispatch(
+              StackActions.replace("PlaylistQuerier")
+            )
+          }
+        >
+          <Text style={styles.buttonText}>Query Machine</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() =>
             this.props.navigation.dispatch(StackActions.replace("HomeScreen"))
           }
         >

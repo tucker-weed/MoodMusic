@@ -1,12 +1,11 @@
 export default class PriorityQueue {
-  constructor(ordering) {
-    this.ordering = ordering;
+  constructor(orderedBy) {
+    this.orderedBy = orderedBy;
     this.heap = [];
-    this.numItems = 0;
   }
 
   _isEmpty = () => {
-    return this.numItems == 0;
+    return this.heap.length == 0;
   };
 
   _swap = (ind1, ind2) => {
@@ -21,7 +20,9 @@ export default class PriorityQueue {
     while (i != last) {
       last = i;
       const parentIndex = Math.max(Math.floor((i - 1) / 2), 0);
-      if (this.heap[parentIndex][this.ordering] < this.heap[i][this.ordering]) {
+      if (
+        this.heap[parentIndex][this.orderedBy] < this.heap[i][this.orderedBy]
+      ) {
         this._swap(parentIndex, i);
         i = parentIndex;
       }
@@ -37,27 +38,30 @@ export default class PriorityQueue {
       const leftChildIndex = i * 2 + 1;
       const rightChild =
         rightChildIndex < this.heap.length
-          ? this.heap[rightChildIndex][this.ordering]
+          ? this.heap[rightChildIndex][this.orderedBy]
           : null;
       const leftChild =
         leftChildIndex < this.heap.length
-          ? this.heap[leftChildIndex][this.ordering]
+          ? this.heap[leftChildIndex][this.orderedBy]
           : null;
       if (rightChild && leftChild) {
-        if (rightChild < leftChild && leftChild > this.heap[i][this.ordering]) {
+        if (
+          rightChild < leftChild &&
+          leftChild > this.heap[i][this.orderedBy]
+        ) {
           this._swap(i, leftChildIndex);
           i = leftChildIndex;
         } else if (
           rightChild > leftChild &&
-          rightChild > this.heap[i][this.ordering]
+          rightChild > this.heap[i][this.orderedBy]
         ) {
           this._swap(i, rightChildIndex);
           i = rightChildIndex;
         }
-      } else if (rightChild && rightChild > this.heap[i][this.ordering]) {
+      } else if (rightChild && rightChild > this.heap[i][this.orderedBy]) {
         this._swap(i, rightChildIndex);
         i = rightChildIndex;
-      } else if (leftChild && leftChild > this.heap[i][this.ordering]) {
+      } else if (leftChild && leftChild > this.heap[i][this.orderedBy]) {
         this._swap(i, leftChildIndex);
         i = leftChildIndex;
       }
@@ -69,8 +73,7 @@ export default class PriorityQueue {
       return null;
     } else {
       const toReturn = this.heap[0];
-      this.numItems -= 1;
-      this.heap[0] = this.heap[this.numItems];
+      this.heap[0] = this.heap[this.heap.length - 1];
       this.heap.pop();
       this._siftDown(0);
       return toReturn;
@@ -79,7 +82,6 @@ export default class PriorityQueue {
 
   enqueue(item) {
     this.heap.push(item);
-    this._siftUp(this.numItems);
-    this.numItems += 1;
+    this._siftUp(this.heap.length - 1);
   }
 }

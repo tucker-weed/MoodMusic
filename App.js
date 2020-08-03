@@ -6,7 +6,9 @@ import HomeScreen from "./pages/HomeScreen.js";
 import SpotifyLogin from "./pages/SpotifyLogin.js";
 import MoodHome from "./pages/MoodHome.js";
 import PlaylistCreator from "./pages/PlaylistCreator.js";
+import PlaylistQuerier from "./pages/PlaylistQuerier.js";
 import PlaylistResults from "./pages/PlaylistResults.js";
+import QueryTrackLoader from "./pages/QueryTrackLoader.js";
 import SongPlayer from "./pages/SongPlayer.js";
 
 const Stack = createStackNavigator();
@@ -52,6 +54,15 @@ function MainStackNavigator() {
           }}
         />
         <Stack.Screen
+          name="PlaylistQuerier"
+          component={PlaylistQuerier}
+          options={{
+            title: "Query Engine",
+            headerStyle: { backgroundColor: "#008080" },
+            headerTintColor: "white"
+          }}
+        />
+        <Stack.Screen
           name="PlaylistResults"
           component={PlaylistResults}
           options={{
@@ -65,6 +76,15 @@ function MainStackNavigator() {
           component={SongPlayer}
           options={{
             title: "Player",
+            headerStyle: { backgroundColor: "#008080" },
+            headerTintColor: "white"
+          }}
+        />
+        <Stack.Screen
+          name="QueryTrackLoader"
+          component={QueryTrackLoader}
+          options={{
+            title: "Track Loader",
             headerStyle: { backgroundColor: "#008080" },
             headerTintColor: "white"
           }}

@@ -30,6 +30,36 @@ export const apiGetContextUri = async token => {
   return uri;
 };
 
+export const apiGetPlaylists = async (query, offset, token) => {
+  const url =
+    "https://api.spotify.com/v1/search?q=" +
+    query.split(' ').join('+') +
+    "&type=playlist&limit=50&offset=" +
+    offset +
+    "&market=from_token";
+  const response = await axios.get(url, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  return response.data;
+};
+
+export const getPlaylistTracks = async (pid, token) => {
+  const url =
+    "https://api.spotify.com/v1/playlists/" +
+    pid +
+    "/tracks?limit=100&market=from_token";
+  const response = await axios.get(url, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  
+  return response.data;
+};
+
 export const apiGetPlayingData = async token => {
   const response = await axios.get("https://api.spotify.com/v1/me/player", {
     headers: {
