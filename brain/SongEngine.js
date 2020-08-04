@@ -7,18 +7,19 @@ import PriorityQueue from "./PriorityQueue.js";
  * @param state - saved component state which contains user input values
  * @param playlistId - target playlist id to fill with songs
  * @param token - user authenticated access token for API requests
+ * @param seenSongs - an Array of track IDs seen already
  */
 export default class SongEngine {
   constructor(state, playlistId, token, seenSongs) {
-    this.playlistId = playlistId;
-    this.token = token;
-    this.state = state;
-    this.seenSongs = seenSongs;
+    this._playlistId = playlistId;
+    this._token = token;
+    this._state = state;
+    this._seenSongs = seenSongs;
     /**
      * LIMIT: a number, the spotify API limit on POST data length.
      * RESTRICTED TO: less than or equal to 100.
      */
-    this.LIMIT = 100;
+    this._LIMIT = 100;
   }
 
   /**
@@ -30,7 +31,7 @@ export default class SongEngine {
   _apiGet = async url => {
     return await axios.get(url, {
       headers: {
-        Authorization: `Bearer ${this.token}`
+        Authorization: `Bearer ${this._token}`
       }
     });
   };
@@ -68,24 +69,24 @@ export default class SongEngine {
    */
   _applyFilter = (features, index, data) => {
     const euphoria =
-      this.state.euphoria >= 0
+      this._state.euphoria >= 0
         ? features[index].valence * 50 + features[index].danceability * 50
         : (1 - features[index].valence) * 100;
     const hype =
-      this.state.hype >= 0
+      this._state.hype >= 0
         ? features[index].energy * 160 + features[index].acousticness * 40
         : (1 - features[index].energy) * 200;
     const passedFeaturesCheck =
-      features[index].tempo > this.state.tempo &&
-      euphoria > Math.abs(this.state.euphoria) &&
-      hype > Math.abs(this.state.hype) &&
-      !this.seenSongs[features[index].id];
+      features[index].tempo > this._state.tempo &&
+      euphoria > Math.abs(this._state.euphoria) &&
+      hype > Math.abs(this._state.hype) &&
+      !this._seenSongs[features[index].id];
     const filtered_popularity_song =
       data["items"] &&
-      data.items[index].track.popularity > this.state.sPopularity
+      data.items[index].track.popularity > this._state.sPopularity
         ? data.items[index]
         : data["tracks"] &&
-          data.tracks[index].popularity > this.state.sPopularity
+          data.tracks[index].popularity > this._state.sPopularity
         ? data.tracks[index]
         : null;
 
@@ -160,7 +161,7 @@ export default class SongEngine {
 
     while (
       songsAndResponse &&
-      songsToReturn.length < this.LIMIT &&
+      songsToReturn.length < this._LIMIT &&
       !this._timeout(start, 7)
     ) {
       const idAccum = [];
@@ -190,7 +191,7 @@ export default class SongEngine {
           }
         }
         songsToReturn.push(
-          ...uniqueSongs.slice(0, this.LIMIT - songsToReturn.length)
+          ...uniqueSongs.slice(0, this._LIMIT - songsToReturn.length)
         );
       }
     }
@@ -258,7 +259,7 @@ export default class SongEngine {
    */
   algorithm = async (mode, artistSeeds) => {
     const url =
-      "https://api.spotify.com/v1/playlists/" + this.playlistId + "/tracks";
+      "https://api.spotify.com/v1/playlists/" + this._playlistId + "/tracks";
     const response = await this._apiGet(url);
     const playlistItems = response.data.items;
     let artistIds = [];
@@ -280,9 +281,13 @@ export default class SongEngine {
     if (mode === "filter") {
       let idString = "";
       let idsAdded = 0;
-      for (let k = 0; k < artistIds.length && idsAdded < this.LIMIT; k++) {
+      for (let k = 0; k < artistIds.length && idsAdded < this._LIMIT; k++) {
         const artistTracks = addedArtists[artistIds[k]];
-        for (let c = 0; c < artistTracks.length && idsAdded < this.LIMIT; c++) {
+        for (
+          let c = 0;
+          c < artistTracks.length && idsAdded < this._LIMIT;
+          c++
+        ) {
           idString += artistTracks[c] + ",";
           idsAdded++;
         }
@@ -292,16 +297,24 @@ export default class SongEngine {
         idString
       );
     } else if (mode === "create" && artistSeeds) {
-      if (this.state.lookForRelated) {
-        const relatedArtists = await this._getRelatedArtists(artistIds, addedArtists, 150);
+      if (this._state.lookForRelated) {
+        const relatedArtists = await this._getRelatedArtists(
+          artistIds,
+          addedArtists,
+          150
+        );
         artistIds = relatedArtists;
       }
       artistIds.unshift(...artistSeeds);
       this._shuffleArray(artistIds);
       playlistToReturn = await this._artistsToPlaylist(artistIds);
     } else if (mode === "create") {
-      if (this.state.lookForRelated) {
-        const relatedArtists = await this._getRelatedArtists(artistIds, addedArtists, 150);
+      if (this._state.lookForRelated) {
+        const relatedArtists = await this._getRelatedArtists(
+          artistIds,
+          addedArtists,
+          150
+        );
         artistIds = relatedArtists;
       }
       this._shuffleArray(artistIds);

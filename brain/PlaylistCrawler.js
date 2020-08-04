@@ -3,11 +3,12 @@ import PriorityQueue from "./PriorityQueue.js";
 
 export default class PlaylistCrawler {
   constructor(pop1, pop2) {
-    this.pop1 = pop1;
-    this.pop2 = pop2;
-    this.max_playlists = 250;
-    this.max_tracks = 175;
-    this.data = {
+    this._pop1 = pop1;
+    this._pop2 = pop2;
+    this._max_playlists = 250;
+    this._max_tracks = 175;
+    this._min_count = 4;
+    this._data = {
       playlists: 0,
       ntracks: 0,
       offset: -1,
@@ -16,11 +17,7 @@ export default class PlaylistCrawler {
     };
   }
 
-  loadExistingData = data => {
-    this.data = data;
-  };
-
-  enoughDataToParse = items => {
+  _enoughDataToParse = items => {
     const artists = [];
     const albums = [];
 
@@ -34,26 +31,26 @@ export default class PlaylistCrawler {
     return artists.length > 1 && albums.length > 1;
   };
 
-  processPlaylist = async (playlist, token) => {
-    const tracks = this.data["tracks"];
-    const names = this.data["pNames"];
+  _processPlaylist = async (playlist, token) => {
+    const tracks = this._data["tracks"];
+    const names = this._data["pNames"];
     const pid = playlist["id"];
-    this.data["playlists"] += 1;
+    this._data["playlists"] += 1;
 
     let offset = 0;
     let nTracksCurrent = 0;
     let results = await getPlaylistTracks(pid, offset, token);
 
-    while (results && nTracksCurrent < this.max_tracks) {
-      if (results["items"] && this.enoughDataToParse(results["items"])) {
+    while (results && nTracksCurrent < this._max_tracks) {
+      if (results["items"] && this._enoughDataToParse(results["items"])) {
         names[playlist["id"]] = playlist["name"];
         for (let i = 0; i < results["items"].length; i++) {
           const track = results["items"][i]["track"];
           if (
             track &&
             track["id"] &&
-            track["popularity"] >= this.pop1 &&
-            track["popularity"] <= this.pop2
+            track["popularity"] >= this._pop1 &&
+            track["popularity"] <= this._pop2
           ) {
             if (!tracks[track["id"]]) {
               tracks[track["id"]] = {
@@ -64,13 +61,13 @@ export default class PlaylistCrawler {
             }
             tracks[track["id"]]["count"] += 1;
             nTracksCurrent += 1;
-            this.data["ntracks"] += 1;
+            this._data["ntracks"] += 1;
           }
         }
       } else {
         console.log("processPlaylist: playlist skipped");
       }
-      if (results["next"] && nTracksCurrent < this.max_tracks) {
+      if (results["next"] && nTracksCurrent < this._max_tracks) {
         offset = results["offset"] + results["limit"];
         const newResults = await getPlaylistTracks(pid, offset, token);
         results = newResults["playlists"];
@@ -80,29 +77,33 @@ export default class PlaylistCrawler {
     }
   };
 
+  loadExistingData = data => {
+    this._data = data;
+  };
+
   crawlPlaylists = async (queries, token) => {
     for (let i = 0; i < queries.length; i++) {
-      const offset = this.data["offset"] < 0 ? 0 : this.data["offset"] + 50;
+      const offset = this._data["offset"] < 0 ? 0 : this._data["offset"] + 50;
       const results = await apiGetPlaylists(queries[i], offset, token);
       let playlists = results["playlists"];
       const underLimit = () => {
-        return this.data["playlists"] < this.max_playlists;
+        return this._data["playlists"] < this._max_playlists;
       };
 
       while (playlists && underLimit()) {
-        this.data["offset"] = playlists["offset"] + playlists["limit"];
+        this._data["offset"] = playlists["offset"] + playlists["limit"];
         for (let k = 0; k < playlists["items"].length && underLimit(); k++) {
           if (
-            !this.data["pNames"][playlists["items"][k]["id"]] &&
+            !this._data["pNames"][playlists["items"][k]["id"]] &&
             playlists["items"][k]["tracks"]["total"] >= 50
           ) {
-            await this.processPlaylist(playlists["items"][k], token);
+            await this._processPlaylist(playlists["items"][k], token);
           }
         }
         if (playlists["next"]) {
           const newResults = await apiGetPlaylists(
             queries[i],
-            this.data["offset"],
+            this._data["offset"],
             token
           );
           playlists = newResults["playlists"];
@@ -111,13 +112,13 @@ export default class PlaylistCrawler {
         }
       }
     }
-    return this.data;
+    return this._data;
   };
 
   getTopQueryTracks = async unique => {
-    const tracks = this.data["tracks"];
+    const tracks = this._data["tracks"];
     const keys = Object.keys(tracks);
-    const total = this.data["playlists"];
+    const total = this._data["playlists"];
     const pq = new PriorityQueue("count", !unique);
 
     for (let i = 0; i < keys.length; i++) {
@@ -128,7 +129,7 @@ export default class PlaylistCrawler {
     const output = {};
     for (let i = 0; i < keys.length; i++) {
       const track = pq.dequeue();
-      if (track && track["count"] >= 4) {
+      if (track && track["count"] >= this._min_count) {
         const idf = Math.log10(total / track["count"]);
         //const ppm = 1000 * track['count'] / total;
         output[track["ref_id"]] = idf;

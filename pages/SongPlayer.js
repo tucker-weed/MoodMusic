@@ -68,6 +68,10 @@ export default class SongPlayer extends React.Component {
 
   saveRadioState = async () => {
     Keyboard.dismiss();
+    if (this.state.playlistName === '') {
+      Alert.alert("Invalid radio");
+      return;
+    }
     const radioHist = await getData("AllRadioHistory");
     const playlistId = await getData("playlistId");
     const token = await getData("accessToken");
@@ -97,6 +101,10 @@ export default class SongPlayer extends React.Component {
 
   createNewPlaylist = async () => {
     Keyboard.dismiss();
+    if (this.state.playlistName === '' || this.state.trackLikes.length == 0) {
+      Alert.alert("Invalid playlist");
+      return;
+    }
     const token = await getData("accessToken");
     const userId = await getData("userId");
     const controller = new PlayerController(this.initSeen, this.state, token);
