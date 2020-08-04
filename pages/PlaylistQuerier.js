@@ -68,7 +68,7 @@ export default class PlaylistCreator extends React.Component {
     try {
       const token = await getData("accessToken");
 
-      const pc = new PlaylistCrawler(that.state.pop1, that.state.pop2);
+      const pc = new PlaylistCrawler(that.state.pop1, that.state.pop2, 1);
       const data = await pc.crawlPlaylists(that.state.queries, token);
       this.setState({
         creating: false,

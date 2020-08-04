@@ -5,11 +5,13 @@ import { StackActions } from "@react-navigation/native";
 import { styles } from "../Styles.js";
 import { Mytext } from "../components/Mytext.js";
 import { getData } from "../brain/LocalStorage.js";
-import { apiPutTracks } from "../brain/APIfunctions.js";
+import { apiPutTracks, apiPostTracks } from "../brain/APIfunctions.js";
+import PlaylistCrawler from "../brain/PlaylistCrawler.js";
 
 export default class PlaylistResults extends React.Component {
   constructor(props) {
     super(props);
+    this.topTracks = 250;
     this.state = {
       userInfo: null,
       token: null,
@@ -21,11 +23,54 @@ export default class PlaylistResults extends React.Component {
   activate = async () => {
     const data = await getData("userData");
     const token = await getData("accessToken");
-    const playlist = await getData("playlistData");
+    let playlist = await getData("playlistData");
     const playlistId = await getData("mmPlaylist");
+    const stats = await getData("Stats");
 
     try {
-      if (playlistId && playlist) {
+      if (playlistId && playlist && stats.countFilter) {
+        const tc = await getData("trackCounts");
+        const tff = new PlaylistCrawler(0, 0, 2);
+        tff.loadExistingData({ tracks: tc });
+        const out = await tff.getTopQueryTracks(stats.unique);
+        const songs = Object.keys(out).slice(0, this.topTracks);
+        const songsMap = {};
+        for (let i = 0; i < songs.length; i++) {
+          songsMap[songs[i]] = true;
+        }
+        const newPlaylist = [];
+        for (let i = 0; i < playlist.length; i++) {
+          if (songsMap[playlist[i]["id"]]) {
+            newPlaylist.push(playlist[i]);
+          }
+        } 
+        playlist = newPlaylist;
+        let ids = [];
+        const limit = 100;
+        for (let i = 0; i < songs.length; i++) {
+          ids.push("spotify:track:" + songs[i]);
+        }
+        await apiPutTracks(
+          "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks",
+          token,
+          ids.slice(0, limit)
+        );
+        ids = ids.length <= limit ? null : ids.slice(limit, ids.length);
+        while (ids) {
+          const cut = ids.slice(0, limit);
+          if (ids.length > limit) {
+            ids = ids.slice(limit, ids.length);
+          } else {
+            ids = null;
+          }
+          await apiPostTracks(
+            "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks",
+            token,
+            cut,
+            limit
+          );
+        }
+      } else if (playlistId && playlist) {
         const url =
           "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
         const ids = [];

@@ -18,13 +18,24 @@ export default class PlaylistCreator extends React.Component {
       euphoria: 0,
       hype: 0,
       key: 0,
-      sPopularity: 0,
-      lookForRelated: false
+      pop1: 0,
+      pop2: 100,
+      lookForRelated: false,
+      countFilter: false,
+      unique: false
     };
   }
 
   toggleSwitch = () => {
     this.setState({ lookForRelated: !this.state.lookForRelated });
+  };
+
+  toggleSwitch2 = () => {
+    this.setState({ countFilter: !this.state.countFilter });
+  };
+
+  toggleSwitch3 = () => {
+    this.setState({ unique: !this.state.unique });
   };
 
   activateAlgorithm = async which => {
@@ -56,12 +67,16 @@ export default class PlaylistCreator extends React.Component {
             extraArtists = radioHistory[radioName].artistLikes;
           }
         }
-        const songs = await new SongEngine(
+        const engine = new SongEngine(
           this.state,
           id,
           token,
-          seen_songs
-        ).algorithm(which, extraArtists);
+          seen_songs,
+          this.state.countFilter
+        );
+        const songs = await engine.algorithm(which, extraArtists);
+        const tc = engine.getTrackCounts();
+        await setData("trackCounts", tc);
         await setData("playlistData", songs);
         await setData("Stats", that.state);
         this.props.navigation.navigate("PlaylistResults");
@@ -135,6 +150,25 @@ export default class PlaylistCreator extends React.Component {
         )}
         <Mytext text={"Seed Playlist: " + this.props.route.params.pName} />
         <View style={localStyles.container}>
+          <Mytext text="Count Active - Unique Songs" />
+          <Switch
+            style={{ marginBottom: 20 }}
+            trackColor={{ false: "#767577", true: "#81b0ff" }}
+            thumbColor="#f4f3f4"
+            ios_backgroundColor="#3e3e3e"
+            onValueChange={this.toggleSwitch2}
+            value={this.state.countFilter}
+          />
+          <Switch
+            style={{ marginBottom: 20 }}
+            trackColor={{ false: "#767577", true: "#81b0ff" }}
+            thumbColor="#f4f3f4"
+            ios_backgroundColor="#3e3e3e"
+            onValueChange={this.toggleSwitch3}
+            value={this.state.unique}
+          />
+        </View>
+        <View style={localStyles.container}>
           <MytextTwo
             text={
               this.state.euphoria >= 0
@@ -143,7 +177,7 @@ export default class PlaylistCreator extends React.Component {
             }
           />
           <Slider
-            style={{ width: 300, height: 40 }}
+            style={{ width: 300, height: 20 }}
             minimumValue={-100}
             maximumValue={100}
             disabled={this.state.creating ? true : false}
@@ -161,7 +195,7 @@ export default class PlaylistCreator extends React.Component {
             }
           />
           <Slider
-            style={{ width: 300, height: 40 }}
+            style={{ width: 300, height: 20 }}
             minimumValue={-200}
             maximumValue={200}
             disabled={this.state.creating ? true : false}
@@ -171,23 +205,38 @@ export default class PlaylistCreator extends React.Component {
           />
         </View>
         <View style={localStyles.container}>
-          <Mytext text={"Song Popularity: " + this.state.sPopularity} />
+          <Mytext
+            text={
+              "Popularity Lower: " +
+              this.state.pop1 +
+              " - Upper: " +
+              this.state.pop2
+            }
+          />
           <Slider
-            style={{ width: 300, height: 40 }}
+            style={{ width: 300, height: 30 }}
             minimumValue={0}
             maximumValue={100}
             disabled={this.state.creating ? true : false}
             minimumTrackTintColor="#FFFFFF"
             maximumTrackTintColor="#000000"
-            onValueChange={val =>
-              this.setState({ sPopularity: Math.round(val) })
-            }
+            onValueChange={val => this.setState({ pop1: Math.round(val) })}
+          />
+          <Slider
+            style={{ width: 300, height: 30 }}
+            minimumValue={0}
+            maximumValue={100}
+            value={100}
+            disabled={this.state.creating ? true : false}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="#000000"
+            onValueChange={val => this.setState({ pop2: Math.round(val) })}
           />
         </View>
         <View style={localStyles.container}>
           <Mytext text={"Tempo: " + this.state.tempo} />
           <Slider
-            style={{ width: 300, height: 40 }}
+            style={{ width: 300, height: 20 }}
             minimumValue={0}
             maximumValue={200}
             disabled={this.state.creating ? true : false}

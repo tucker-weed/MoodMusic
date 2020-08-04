@@ -2,12 +2,9 @@ import { apiGetPlaylists, getPlaylistTracks } from "./APIfunctions.js";
 import PriorityQueue from "./PriorityQueue.js";
 
 export default class PlaylistCrawler {
-  constructor(pop1, pop2) {
+  constructor(pop1, pop2, min_count) {
     this._pop1 = pop1;
     this._pop2 = pop2;
-    this._max_playlists = 250;
-    this._max_tracks = 175;
-    this._min_count = 4;
     this._data = {
       playlists: 0,
       ntracks: 0,
@@ -15,6 +12,10 @@ export default class PlaylistCrawler {
       tracks: {},
       pNames: {}
     };
+    this._max_playlists = 250;
+    this._max_tracks = 175;
+    this._min_count = min_count;
+    this._is_playlist_min = 50;
   }
 
   _enoughDataToParse = items => {
@@ -95,7 +96,7 @@ export default class PlaylistCrawler {
         for (let k = 0; k < playlists["items"].length && underLimit(); k++) {
           if (
             !this._data["pNames"][playlists["items"][k]["id"]] &&
-            playlists["items"][k]["tracks"]["total"] >= 50
+            playlists["items"][k]["tracks"]["total"] >= this._is_playlist_min
           ) {
             await this._processPlaylist(playlists["items"][k], token);
           }
@@ -118,7 +119,7 @@ export default class PlaylistCrawler {
   getTopQueryTracks = async unique => {
     const tracks = this._data["tracks"];
     const keys = Object.keys(tracks);
-    const total = this._data["playlists"];
+    //const total = this._data["playlists"];
     const pq = new PriorityQueue("count", !unique);
 
     for (let i = 0; i < keys.length; i++) {
@@ -130,9 +131,9 @@ export default class PlaylistCrawler {
     for (let i = 0; i < keys.length; i++) {
       const track = pq.dequeue();
       if (track && track["count"] >= this._min_count) {
-        const idf = Math.log10(total / track["count"]);
+        //const idf = Math.log10(total / track["count"]);
         //const ppm = 1000 * track['count'] / total;
-        output[track["ref_id"]] = idf;
+        output[track["ref_id"]] = true; //idf;
       }
     }
 

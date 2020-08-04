@@ -40,7 +40,7 @@ export default class PlaylistResults extends React.Component {
     this.setState({ on: true });
 
     try {
-      const tff = new PlaylistCrawler(0, 0);
+      const tff = new PlaylistCrawler(0, 0, 4);
       tff.loadExistingData(data);
       const out = await tff.getTopQueryTracks(unique);
       let songs = Object.keys(out).slice(0, this.topTracks);

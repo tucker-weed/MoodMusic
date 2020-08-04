@@ -8,13 +8,16 @@ import PriorityQueue from "./PriorityQueue.js";
  * @param playlistId - target playlist id to fill with songs
  * @param token - user authenticated access token for API requests
  * @param seenSongs - an Array of track IDs seen already
+ * @param countFilter - a boolean indicating whether to filter by track count
  */
 export default class SongEngine {
-  constructor(state, playlistId, token, seenSongs) {
+  constructor(state, playlistId, token, seenSongs, countFilter) {
     this._playlistId = playlistId;
     this._token = token;
     this._state = state;
     this._seenSongs = seenSongs;
+    this._countFilter = countFilter;
+    this._tracks = {};
     /**
      * LIMIT: a number, the spotify API limit on POST data length.
      * RESTRICTED TO: less than or equal to 100.
@@ -83,10 +86,12 @@ export default class SongEngine {
       !this._seenSongs[features[index].id];
     const filtered_popularity_song =
       data["items"] &&
-      data.items[index].track.popularity > this._state.sPopularity
+      data.items[index].track.popularity >= this._state.pop1 &&
+      data.items[index].track.popularity <= this._state.pop2
         ? data.items[index]
         : data["tracks"] &&
-          data.tracks[index].popularity > this._state.sPopularity
+          data.tracks[index].popularity >= this._state.pop1 &&
+          data.tracks[index].popularity <= this._state.pop2
         ? data.tracks[index]
         : null;
 
@@ -117,7 +122,18 @@ export default class SongEngine {
     while (existenceCheck && j < trackData.data.audio_features.length) {
       features = trackData.data.audio_features;
       const songOrNull = this._applyFilter(features, j, data);
-      songOrNull ? songsToReturn.push(songOrNull) : null;
+      if (songOrNull) {
+        if (this._countFilter && !this._tracks[songOrNull["id"]]) {
+          this._tracks[songOrNull["id"]] = {
+            title: songOrNull["name"],
+            count: 0
+          };
+        }
+        if (this._countFilter) {
+          this._tracks[songOrNull["id"]]["count"] += 1;
+        }
+        songsToReturn.push(songOrNull);
+      }
       j++;
       existenceCheck = features[j] && features[j]["danceability"];
     }
@@ -161,8 +177,8 @@ export default class SongEngine {
 
     while (
       songsAndResponse &&
-      songsToReturn.length < this._LIMIT &&
-      !this._timeout(start, 7)
+      (this._countFilter || songsToReturn.length < this._LIMIT) &&
+      !this._timeout(start, 30)
     ) {
       const idAccum = [];
       for (let i = 0; i < artistIds.length && idAccum.length < 2; i++) {
@@ -190,9 +206,13 @@ export default class SongEngine {
             uniqueSongs.push(filtered[i]);
           }
         }
-        songsToReturn.push(
-          ...uniqueSongs.slice(0, this._LIMIT - songsToReturn.length)
-        );
+        if (this._countFilter) {
+          songsToReturn.push(...uniqueSongs);
+        } else {
+          songsToReturn.push(
+            ...uniqueSongs.slice(0, this._LIMIT - songsToReturn.length)
+          );
+        }
       }
     }
 
@@ -248,6 +268,10 @@ export default class SongEngine {
     }
     this._shuffleArray(relatedArtists);
     return relatedArtists;
+  };
+
+  getTrackCounts = () => {
+    return this._tracks;
   };
 
   /**

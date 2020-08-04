@@ -68,7 +68,7 @@ export default class SongPlayer extends React.Component {
 
   saveRadioState = async () => {
     Keyboard.dismiss();
-    if (this.state.playlistName === '') {
+    if (this.state.playlistName === "") {
       Alert.alert("Invalid radio");
       return;
     }
@@ -101,7 +101,7 @@ export default class SongPlayer extends React.Component {
 
   createNewPlaylist = async () => {
     Keyboard.dismiss();
-    if (this.state.playlistName === '' || this.state.trackLikes.length == 0) {
+    if (this.state.playlistName === "" || this.state.trackLikes.length == 0) {
       Alert.alert("Invalid playlist");
       return;
     }
