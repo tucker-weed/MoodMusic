@@ -33,7 +33,7 @@ export const apiGetContextUri = async token => {
 export const apiGetPlaylists = async (query, offset, token) => {
   const url =
     "https://api.spotify.com/v1/search?q=" +
-    query.split(' ').join('+') +
+    query.split(" ").join("+") +
     "&type=playlist&limit=50&offset=" +
     offset +
     "&market=from_token";
@@ -46,17 +46,19 @@ export const apiGetPlaylists = async (query, offset, token) => {
   return response.data;
 };
 
-export const getPlaylistTracks = async (pid, token) => {
+export const getPlaylistTracks = async (pid, offset, token) => {
   const url =
     "https://api.spotify.com/v1/playlists/" +
     pid +
-    "/tracks?limit=100&market=from_token";
+    "/tracks?limit=100&offset=" +
+    offset +
+    "&market=from_token";
   const response = await axios.get(url, {
     headers: {
       Authorization: `Bearer ${token}`
     }
   });
-  
+
   return response.data;
 };
 
@@ -169,6 +171,26 @@ export const apiPut = async (url, token) => {
 };
 
 /* POST functions */
+
+export const apiPostTracks = async (url, token, trackIds, position) => {
+  const jsonData = {
+    uris: trackIds,
+    position: position
+  };
+  return await axios.post(
+    url,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json;charset=UTF-8",
+        "Access-Control-Allow-Origin": "*"
+      },
+      data: jsonData,
+      dataType: "json"
+    }
+  );
+};
 
 export const apiPost = async (url, token) => {
   await axios.post(

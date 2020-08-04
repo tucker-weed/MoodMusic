@@ -231,7 +231,7 @@ export default class SongEngine {
 
       if (response && response.data.artists[0]) {
         const responseArtists = response.data.artists;
-        const relatedPopularity = new PriorityQueue("popularity");
+        const relatedPopularity = new PriorityQueue("popularity", true);
         this._shuffleArray(responseArtists);
         for (let i = 0; i < responseArtists.length; i++) {
           if (!addedArtists[responseArtists[i].id]) {

@@ -71,6 +71,7 @@ export default class PlaylistCreator extends React.Component {
         this.props.navigation.navigate("PlaylistResults");
       }
     } catch (e) {
+      this.setState({ creating: false });
       const check =
         e["response"] &&
         e["response"]["data"] &&

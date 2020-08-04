@@ -72,7 +72,7 @@ export default class PlaylistCreator extends React.Component {
       const data = await pc.crawlPlaylists(that.state.queries, token);
       this.setState({
         creating: false,
-        pNames: Object.keys(data["pNames"]),
+        pNames: Object.values(data["pNames"]),
         data: data
       });
     } catch (e) {
@@ -87,8 +87,11 @@ export default class PlaylistCreator extends React.Component {
             routeName: ""
           })
         );
+      } else {
+        Alert.alert("Unknown Error Occurred: Retry Query");
       }
       console.log(e);
+      this.setState({ creating: false });
     }
   };
 

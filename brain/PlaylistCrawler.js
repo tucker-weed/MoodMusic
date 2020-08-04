@@ -1,10 +1,12 @@
 import { apiGetPlaylists, getPlaylistTracks } from "./APIfunctions.js";
+import PriorityQueue from "./PriorityQueue.js";
 
 export default class PlaylistCrawler {
   constructor(pop1, pop2) {
     this.pop1 = pop1;
     this.pop2 = pop2;
-    this.max_playlists = 200;
+    this.max_playlists = 250;
+    this.max_tracks = 175;
     this.data = {
       playlists: 0,
       ntracks: 0,
@@ -38,31 +40,43 @@ export default class PlaylistCrawler {
     const pid = playlist["id"];
     this.data["playlists"] += 1;
 
-    const results = await getPlaylistTracks(pid, token);
+    let offset = 0;
+    let nTracksCurrent = 0;
+    let results = await getPlaylistTracks(pid, offset, token);
 
-    if (results["items"] && this.enoughDataToParse(results["items"])) {
-      names[playlist["name"]] = true;
-      for (let i = 0; i < results["items"].length; i++) {
-        const track = results["items"][i]["track"];
-        if (
-          track &&
-          track["id"] &&
-          track["popularity"] > this.pop1 &&
-          track["popularity"] < this.pop2
-        ) {
-          if (!tracks[track["id"]]) {
-            tracks[track["id"]] = {
-              title: track["name"],
-              artist: track["artists"][0]["name"],
-              count: 0
-            };
+    while (results && nTracksCurrent < this.max_tracks) {
+      if (results["items"] && this.enoughDataToParse(results["items"])) {
+        names[playlist["id"]] = playlist["name"];
+        for (let i = 0; i < results["items"].length; i++) {
+          const track = results["items"][i]["track"];
+          if (
+            track &&
+            track["id"] &&
+            track["popularity"] >= this.pop1 &&
+            track["popularity"] <= this.pop2
+          ) {
+            if (!tracks[track["id"]]) {
+              tracks[track["id"]] = {
+                title: track["name"],
+                artist: track["artists"][0]["name"],
+                count: 0
+              };
+            }
+            tracks[track["id"]]["count"] += 1;
+            nTracksCurrent += 1;
+            this.data["ntracks"] += 1;
           }
-          tracks[track["id"]]["count"] += 1;
-          this.data["ntracks"] += 1;
         }
+      } else {
+        console.log("processPlaylist: playlist skipped");
       }
-    } else {
-      console.log("processPlaylist: playlist skipped");
+      if (results["next"] && nTracksCurrent < this.max_tracks) {
+        offset = results["offset"] + results["limit"];
+        const newResults = await getPlaylistTracks(pid, offset, token);
+        results = newResults["playlists"];
+      } else {
+        results = null;
+      }
     }
   };
 
@@ -78,7 +92,10 @@ export default class PlaylistCrawler {
       while (playlists && underLimit()) {
         this.data["offset"] = playlists["offset"] + playlists["limit"];
         for (let k = 0; k < playlists["items"].length && underLimit(); k++) {
-          if (!this.data["pNames"][playlists["items"][k]["name"]]) {
+          if (
+            !this.data["pNames"][playlists["items"][k]["id"]] &&
+            playlists["items"][k]["tracks"]["total"] >= 50
+          ) {
             await this.processPlaylist(playlists["items"][k], token);
           }
         }
@@ -95,5 +112,31 @@ export default class PlaylistCrawler {
       }
     }
     return this.data;
+  };
+
+  getTopQueryTracks = async unique => {
+    const tracks = this.data["tracks"];
+    const keys = Object.keys(tracks);
+    const total = this.data["playlists"];
+    const pq = new PriorityQueue("count", !unique);
+
+    for (let i = 0; i < keys.length; i++) {
+      tracks[keys[i]]["ref_id"] = keys[i];
+      pq.enqueue(tracks[keys[i]]);
+    }
+
+    const output = {};
+    for (let i = 0; i < keys.length; i++) {
+      const track = pq.dequeue();
+      if (track && track["count"] >= 4) {
+        const idf = Math.log10(total / track["count"]);
+        //const ppm = 1000 * track['count'] / total;
+        output[track["ref_id"]] = idf;
+      }
+    }
+
+    //output['backoff_probability'] = 1000 / total;
+    // ** output["backoff_idf"] = Math.log10((total * 2) / 1);
+    return output;
   };
 }
