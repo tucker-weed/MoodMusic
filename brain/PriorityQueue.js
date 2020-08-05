@@ -81,6 +81,10 @@ export default class PriorityQueue {
     }
   };
 
+  size() {
+    return this._heap.length;
+  }
+
   dequeue() {
     if (this._isEmpty()) {
       return null;

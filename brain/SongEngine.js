@@ -17,6 +17,7 @@ export default class SongEngine {
     this._state = state;
     this._seenSongs = seenSongs;
     this._countFilter = countFilter;
+    this._max_runs = 2;
     this._tracks = {};
     /**
      * LIMIT: a number, the spotify API limit on POST data length.
@@ -171,27 +172,43 @@ export default class SongEngine {
   _artistsToPlaylist = async artistIds => {
     const start = new Date().getTime();
     const songsToReturn = [];
-    const addedArtists = {};
     const addedSongs = {};
+    const artistsCopy = artistIds;
+
+    let addedArtists = {};
     let songsAndResponse = true;
+    let runs = 0;
 
     while (
       songsAndResponse &&
       (this._countFilter || songsToReturn.length < this._LIMIT) &&
+      runs < this._max_runs &&
       !this._timeout(start, 30)
     ) {
       const idAccum = [];
-      for (let i = 0; i < artistIds.length && idAccum.length < 2; i++) {
-        if (!addedArtists[artistIds[i]]) {
-          idAccum.push(artistIds[i]);
-          addedArtists[artistIds[i]] = true;
+      for (let i = 0; i < artistsCopy.length && idAccum.length < 2; i++) {
+        if (!addedArtists[artistsCopy[i]]) {
+          idAccum.push(artistsCopy[i]);
+          addedArtists[artistsCopy[i]] = true;
         }
       }
 
-      songsAndResponse =
-        idAccum.length > 0 ? await this._getSeededRecs(idAccum, false) : null;
+      if (idAccum.length == 0 && this._countFilter) {
+        runs += 1;
+        this._shuffleArray(artistsCopy);
+        addedArtists = {};
+        songsAndResponse = "pass";
+      } else if (idAccum.length == 0) {
+        songsAndResponse = null;
+      } else if (idAccum.length > 0) {
+        songsAndResponse = await this._getSeededRecs(idAccum, false);
+      }
 
-      if (songsAndResponse && songsAndResponse["trackIds"].length > 0) {
+      if (
+        songsAndResponse &&
+        songsAndResponse !== "pass" &&
+        songsAndResponse["trackIds"].length > 0
+      ) {
         const filtered = await this._collectFilteredSongs(
           songsAndResponse["response"].data,
           songsAndResponse["trackIds"]
@@ -233,16 +250,18 @@ export default class SongEngine {
       0,
       Math.round(artistIds.length / 3)
     );
-    for (let i = 0; i < originalArtists.length; i++) {
-      if (!addedArtists[originalArtists[i].id]) {
-        relatedArtists.push(originalArtists[i]);
-        addedArtists[originalArtists[i].id] = true;
+    if (!this._countFilter) {
+      for (let i = 0; i < originalArtists.length; i++) {
+        if (!addedArtists[originalArtists[i].id]) {
+          relatedArtists.push(originalArtists[i]);
+          addedArtists[originalArtists[i].id] = true;
+        }
       }
+      artistIds = artistIds.slice(
+        Math.round(artistIds.length / 3),
+        artistIds.length
+      );
     }
-    artistIds = artistIds.slice(
-      Math.round(artistIds.length / 3),
-      artistIds.length
-    );
     for (let a = 0; a < artistIds.length && relatedArtists.length < max; a++) {
       const url =
         "https://api.spotify.com/v1/artists/" +
@@ -259,7 +278,8 @@ export default class SongEngine {
             relatedPopularity.enqueue(responseArtists[i]);
           }
         }
-        for (let i = 0; i < relatedPopularity.numItems && i < 5; i++) {
+        const savedSize = relatedPopularity.size();
+        for (let i = 0; i < savedSize && (i < 5 || this._countFilter); i++) {
           const relID = relatedPopularity.dequeue().id;
           relatedArtists.push(relID);
           addedArtists[relID] = true;
@@ -325,7 +345,7 @@ export default class SongEngine {
         const relatedArtists = await this._getRelatedArtists(
           artistIds,
           addedArtists,
-          150
+          250
         );
         artistIds = relatedArtists;
       }
@@ -337,7 +357,7 @@ export default class SongEngine {
         const relatedArtists = await this._getRelatedArtists(
           artistIds,
           addedArtists,
-          150
+          250
         );
         artistIds = relatedArtists;
       }
