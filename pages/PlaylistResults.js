@@ -32,7 +32,7 @@ export default class PlaylistResults extends React.Component {
         const tc = await getData("trackCounts");
         const tff = new PlaylistCrawler(0, 0, 2);
         tff.loadExistingData({ tracks: tc });
-        const out = await tff.getTopQueryTracks(stats.unique);
+        const out = await tff.getTopQueryTracks(stats.freq1, stats.freq2);
         const songs = Object.keys(out).slice(0, this.topTracks);
         const songsMap = {};
         for (let i = 0; i < songs.length; i++) {

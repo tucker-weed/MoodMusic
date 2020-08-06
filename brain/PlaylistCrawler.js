@@ -116,21 +116,24 @@ export default class PlaylistCrawler {
     return this._data;
   };
 
-  getTopQueryTracks = async unique => {
+  getTopQueryTracks = async (freq1, freq2) => {
     const tracks = this._data["tracks"];
     const keys = Object.keys(tracks);
     //const total = this._data["playlists"];
-    const pq = new PriorityQueue("count", !unique);
+    const pq = new PriorityQueue("count", true);
 
     for (let i = 0; i < keys.length; i++) {
-      tracks[keys[i]]["ref_id"] = keys[i];
-      pq.enqueue(tracks[keys[i]]);
+      if (tracks[keys[i]]["count"] >= this._min_count) {
+        tracks[keys[i]]["ref_id"] = keys[i];
+        pq.enqueue(tracks[keys[i]]);
+      }
     }
 
     const output = {};
-    for (let i = 0; i < keys.length; i++) {
+    const savedSize = pq.size();
+    for (let i = 0; i < savedSize; i++) {
       const track = pq.dequeue();
-      if (track && track["count"] >= this._min_count) {
+      if (track && i > savedSize * freq1 && i < savedSize * freq2) {
         //const idf = Math.log10(total / track["count"]);
         //const ppm = 1000 * track['count'] / total;
         output[track["ref_id"]] = true; //idf;

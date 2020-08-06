@@ -5,10 +5,11 @@ import {
   Text,
   View,
   Image,
-  Switch,
   StyleSheet
 } from "react-native";
 import { StackActions } from "@react-navigation/native";
+import { MytextTwo } from "../components/Mytext.js";
+import Slider from "@react-native-community/slider";
 
 import { styles } from "../Styles.js";
 import { Mytext } from "../components/Mytext.js";
@@ -23,7 +24,8 @@ export default class PlaylistResults extends React.Component {
     this.state = {
       playlist: null,
       on: false,
-      unqiue: false
+      freq1: 0,
+      freq2: 1
     };
   }
 
@@ -33,7 +35,6 @@ export default class PlaylistResults extends React.Component {
 
   activate = async () => {
     const data = this.props.route.params.data;
-    const { unique } = this.state;
     const token = await getData("accessToken");
     const pId = await getData("mmPlaylist");
 
@@ -42,7 +43,10 @@ export default class PlaylistResults extends React.Component {
     try {
       const tff = new PlaylistCrawler(0, 0, 4);
       tff.loadExistingData(data);
-      const out = await tff.getTopQueryTracks(unique);
+      const out = await tff.getTopQueryTracks(
+        this.state.freq1,
+        this.state.freq2
+      );
       let songs = Object.keys(out).slice(0, this.topTracks);
       const songsCopy = Object.keys(out).slice(0, this.topTracks);
       let limit = 50;
@@ -137,14 +141,36 @@ export default class PlaylistResults extends React.Component {
 
         {!this.state.on ? (
           <View style={localStyles.container}>
-            <Mytext text="Unique Songs" />
-            <Switch
-              style={{ marginBottom: 20 }}
-              trackColor={{ false: "#767577", true: "#81b0ff" }}
-              thumbColor="#f4f3f4"
-              ios_backgroundColor="#3e3e3e"
-              onValueChange={this.toggleSwitch}
-              value={this.state.unique}
+            <MytextTwo
+              text={
+                "Unique Lower: " +
+                this.state.freq1 +
+                " Upper: " +
+                this.state.freq2
+              }
+            />
+            <Slider
+              style={{ width: 300, height: 30 }}
+              minimumValue={0}
+              maximumValue={1}
+              disabled={this.state.creating ? true : false}
+              minimumTrackTintColor="#FFFFFF"
+              maximumTrackTintColor="#000000"
+              onValueChange={val =>
+                this.setState({ freq1: Math.round(val * 100) / 100 })
+              }
+            />
+            <Slider
+              style={{ width: 300, height: 30 }}
+              minimumValue={0}
+              maximumValue={1}
+              value={1}
+              disabled={this.state.creating ? true : false}
+              minimumTrackTintColor="#FFFFFF"
+              maximumTrackTintColor="#000000"
+              onValueChange={val =>
+                this.setState({ freq2: Math.round(val * 100) / 100 })
+              }
             />
           </View>
         ) : null}
