@@ -61,7 +61,7 @@ export default class PlaylistCreator extends React.Component {
             await setData("radioArtists", radioHistory[radioName].artistLikes);
             await setData("seenTracks", radioHistory[radioName].seenTracks);
             seen_songs = radioHistory[radioName].seenTracks;
-            extraArtists = radioHistory[radioName].artistLikes;
+            extraArtists = radioHistory[radioName].trackLikes;
           }
         }
         const engine = new SongEngine(

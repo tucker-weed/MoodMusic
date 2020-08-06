@@ -349,7 +349,14 @@ export default class SongEngine {
         );
         artistIds = relatedArtists;
       }
-      artistIds.unshift(...artistSeeds);
+      for (let k = 0; k < artistIds.length; k++) {
+        const artistTracks = addedArtists[artistIds[k]];
+        for (let c = 0; artistTracks && c < artistTracks.length; c++) {
+          artistIds.push(artistTracks[c]);
+        }
+      }
+
+      artistIds.push(...artistSeeds);
       this._shuffleArray(artistIds);
       playlistToReturn = await this._artistsToPlaylist(artistIds);
     } else if (mode === "create") {
@@ -360,6 +367,12 @@ export default class SongEngine {
           250
         );
         artistIds = relatedArtists;
+      }
+      for (let k = 0; k < artistIds.length; k++) {
+        const artistTracks = addedArtists[artistIds[k]];
+        for (let c = 0; artistTracks && c < artistTracks.length; c++) {
+          artistIds.push(artistTracks[c]);
+        }
       }
       this._shuffleArray(artistIds);
       playlistToReturn = await this._artistsToPlaylist(artistIds);
