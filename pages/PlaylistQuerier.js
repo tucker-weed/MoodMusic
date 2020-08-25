@@ -16,7 +16,7 @@ import { ButtonOne } from "../components/MyButtons.js";
 import { getData } from "../brain/LocalStorage.js";
 import PlaylistCrawler from "../brain/PlaylistCrawler.js";
 
-export default class PlaylistCreator extends React.Component {
+export default class PlaylistQuerier extends React.Component {
   constructor(props) {
     super(props);
     this.state = {

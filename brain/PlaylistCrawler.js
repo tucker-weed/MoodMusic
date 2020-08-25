@@ -5,6 +5,7 @@ export default class PlaylistCrawler {
   constructor(pop1, pop2, min_count) {
     this._pop1 = pop1;
     this._pop2 = pop2;
+    this._min_count = min_count;
     this._data = {
       playlists: 0,
       ntracks: 0,
@@ -14,7 +15,6 @@ export default class PlaylistCrawler {
     };
     this._max_playlists = 250;
     this._max_tracks = 175;
-    this._min_count = min_count;
     this._is_playlist_min = 50;
   }
 
@@ -83,13 +83,15 @@ export default class PlaylistCrawler {
   };
 
   crawlPlaylists = async (queries, token) => {
+    const underLimit = () => {
+      return this._data["playlists"] < this._max_playlists;
+    };
+
     for (let i = 0; i < queries.length; i++) {
+      this._data["playlists"] = 0;
       const offset = this._data["offset"] < 0 ? 0 : this._data["offset"] + 50;
       const results = await apiGetPlaylists(queries[i], offset, token);
       let playlists = results["playlists"];
-      const underLimit = () => {
-        return this._data["playlists"] < this._max_playlists;
-      };
 
       while (playlists && underLimit()) {
         this._data["offset"] = playlists["offset"] + playlists["limit"];

@@ -186,7 +186,7 @@ export default class SongEngine {
       !this._timeout(start, 30)
     ) {
       const idAccum = [];
-      for (let i = 0; i < artistsCopy.length && idAccum.length < 2; i++) {
+      for (let i = 0; i < artistsCopy.length && idAccum.length < 4; i++) {
         if (!addedArtists[artistsCopy[i]]) {
           idAccum.push(artistsCopy[i]);
           addedArtists[artistsCopy[i]] = true;

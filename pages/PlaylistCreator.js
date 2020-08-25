@@ -157,6 +157,7 @@ export default class PlaylistCreator extends React.Component {
           />
           <Switch
             style={{ marginBottom: 20 }}
+            disabled={this.state.creating ? true : false}
             trackColor={{ false: "#767577", true: "#81b0ff" }}
             thumbColor="#f4f3f4"
             ios_backgroundColor="#3e3e3e"
